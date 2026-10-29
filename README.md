@@ -62,36 +62,6 @@ After running a simulation, use the Excel and CSV download buttons. Select a rep
 
 smart-warehouse-management-system/
 
-├── app.py                     # Main Flask application and HTTP route handlers
-├── inventory_logic.py         # Inventory calculations (ROP, Safety Stock, Min/Max)
-├── ml_forecasting.py          # Time-series and ML demand forecasting routines
-├── simulation_engine.py       # Core discrete-event warehouse simulation engine
-├── compare_policies.py        # Benchmark runner to compare replenishment policies
-├── simulation_charts.py       # Chart generation utilities for simulation reports
-├── warehouse_demo.py          # Standalone demonstration script with sample data
-├── requirements.txt           # Python package dependencies
-├── start.sh                   # Linux/macOS startup script
-├── instance/
-│   └── warehouse.db           # SQLite database file
-├── static/
-│   └── style.css              # Custom UI stylesheet
-├── templates/                 # Jinja2 presentation templates
-│   ├── dashboard.html         # Main dashboard and KPI metrics
-│   ├── inventory.html         # Live inventory table
-│   ├── stock.html             # Stock levels and adjustments
-│   ├── products.html          # Product catalog management
-│   ├── edit_product.html      # Product update form
-│   ├── replenishment.html     # Restock recommendations view
-│   ├── planning.html          # Inventory planning workspace
-│   ├── purchase_orders.html   # Purchase order workflow
-│   ├── suppliers.html         # Supplier directory
-│   └── simulation.html        # Policy simulation dashboard & plots
-└── tests/                     # Automated test suites
-    ├── test_seven_day_project.py
-    ├── test_simulation_charts_and_reports.py
-    └── test_simulation_engine.py
-
-
 - `app.py` — Flask routes, database models, simulation page and exports
 - `simulation_engine.py` — seven-day simulation mechanics and event log
 - `warehouse_demo.py` — illustrative 10-product demo dataset
