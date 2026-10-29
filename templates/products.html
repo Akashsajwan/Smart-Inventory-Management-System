@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products | Smart Warehouse</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .products-intro {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .products-intro p,
+        .section-description {
+            color: var(--muted);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .product-layout {
+            display: grid;
+            grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.7fr);
+            gap: 22px;
+            align-items: start;
+        }
+
+        .product-panel {
+            background: white;
+            padding: 24px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            min-width: 0;
+        }
+
+        .product-panel h2 {
+            margin-bottom: 4px;
+        }
+
+        .product-form {
+            display: grid;
+            gap: 17px;
+            margin-top: 22px;
+        }
+
+        .product-form button {
+            width: 100%;
+            margin-top: 3px;
+        }
+
+        .field-help {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .product-table {
+            min-width: 850px;
+        }
+
+        .product-table td,
+        .product-table th {
+            padding: 13px 12px;
+        }
+
+        .product-name {
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .product-id {
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 750;
+            white-space: nowrap;
+        }
+
+        .badge-ok {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .badge-low {
+            color: #92400e;
+            background: #fef3c7;
+        }
+
+        .badge-out {
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .product-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+        }
+
+        .edit-link {
+            display: inline-block;
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        .delete-form {
+            display: inline !important;
+            margin: 0 !important;
+        }
+
+        .delete-button {
+            width: auto;
+            padding: 6px 10px;
+            background: #fff0f0;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+            border-radius: 7px;
+            font-size: 12px;
+        }
+
+        .delete-button:hover {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .empty-products {
+            padding: 35px 15px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        @media (max-width: 950px) {
+            .product-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">📦 Smart Warehouse</div>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/products">Products</a>
+            <a href="/stock">Stock Management</a>
+            <a href="/suppliers">Suppliers</a>
+            <a href="/inventory">Inventory</a>
+            <a href="/replenishment">Replenishment</a>
+            <a href="/purchase-orders">Purchase Orders</a>
+            <a href="/simulation">Simulation</a>
+        </div>
+    </nav>
+
+    <header>
+        <h1>Product Management</h1>
+        <p>Add products, maintain stock thresholds, and monitor inventory status.</p>
+    </header>
+
+    <main>
+        <div class="products-intro">
+            <div>
+                <h2>Products Workspace</h2>
+                <p>Manage your warehouse product catalogue.</p>
+            </div>
+            <a href="/" class="button">← Back to Dashboard</a>
+        </div>
+
+        <div class="product-layout">
+            <section class="product-panel">
+                <h2>＋ Add Product</h2>
+                <p class="section-description">
+                    Enter the product details below.
+                </p>
+
+                {% if not suppliers %}
+                    <div class="alert alert-low" style="margin-top: 18px;">
+                        No suppliers are available. Please add a supplier before creating a product.
+                        <p style="margin-top: 8px;">
+                            <a href="/suppliers"><strong>Go to Suppliers →</strong></a>
+                        </p>
+                    </div>
+                {% endif %}
+
+                <form method="POST" class="product-form">
+                    <div>
+                        <label for="name">Product Name</label>
+                        <input
+                            type="text"
+                            id="name"
+                            name="name"
+                            placeholder="e.g. Wireless Mouse"
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label for="category">Category</label>
+                        <input
+                            type="text"
+                            id="category"
+                            name="category"
+                            placeholder="e.g. Accessories"
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label for="price">Unit Price (₹)</label>
+                        <input
+                            type="number"
+                            id="price"
+                            name="price"
+                            min="0"
+                            step="0.01"
+                            placeholder="e.g. 799.00"
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label for="current_stock">Opening Stock (units)</label>
+                        <input
+                            type="number"
+                            id="current_stock"
+                            name="current_stock"
+                            min="0"
+                            step="1"
+                            placeholder="e.g. 25"
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label for="reorder_level">Reorder Level (units)</label>
+                        <input
+                            type="number"
+                            id="reorder_level"
+                            name="reorder_level"
+                            min="0"
+                            step="1"
+                            value="10"
+                            required
+                        >
+                        <span class="field-help">
+                            Stock at or below this level is flagged for review.
+                        </span>
+                    </div>
+
+                    <div>
+                        <label for="supplier_id">Supplier</label>
+                        <select id="supplier_id" name="supplier_id" required>
+                            <option value="">Select a supplier</option>
+                            {% for supplier in suppliers %}
+                                <option value="{{ supplier.id }}">
+                                    {{ supplier.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button type="submit" {% if not suppliers %}disabled{% endif %}>
+                        Add Product →
+                    </button>
+                </form>
+            </section>
+
+            <section class="product-panel">
+                <h2>Product Catalogue</h2>
+                <p class="section-description">
+                    Current products and their stock health.
+                </p>
+
+                <div class="table-wrap">
+                    <table class="product-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Stock</th>
+                                <th>Reorder Level</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for product in products %}
+                                {% if product.current_stock == 0 %}
+                                    {% set status = "OUT OF STOCK" %}
+                                {% elif product.current_stock <= product.reorder_level %}
+                                    {% set status = "LOW STOCK" %}
+                                {% else %}
+                                    {% set status = "OK" %}
+                                {% endif %}
+
+                                <tr>
+                                    <td class="product-id">#{{ product.id }}</td>
+                                    <td class="product-name">{{ product.name }}</td>
+                                    <td>{{ product.category }}</td>
+                                    <td>₹{{ "%.2f"|format(product.price) }}</td>
+                                    <td><strong>{{ product.current_stock }}</strong></td>
+                                    <td>{{ product.reorder_level }}</td>
+
+                                    <td>
+                                        {% if status == "OK" %}
+                                            <span class="status-badge badge-ok">● In Stock</span>
+                                        {% elif status == "LOW STOCK" %}
+                                            <span class="status-badge badge-low">● Low Stock</span>
+                                        {% else %}
+                                            <span class="status-badge badge-out">● Out of Stock</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        <div class="product-actions">
+                                            <a
+                                                class="edit-link"
+                                                href="/products/edit/{{ product.id }}"
+                                            >Edit</a>
+
+                                            <form
+                                                class="delete-form"
+                                                method="POST"
+                                                action="/products/delete/{{ product.id }}"
+                                                onsubmit="return confirm('Delete {{ product.name }}? This action may not be reversible.');"
+                                            >
+                                                <button class="delete-button" type="submit">
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="8">
+                                        <div class="empty-products">
+                                            <p><strong>No products yet</strong></p>
+                                            <p>Add your first product using the form.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+</body>
+</html>

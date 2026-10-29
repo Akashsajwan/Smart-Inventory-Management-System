@@ -1,0 +1,295 @@
+/* Smart Warehouse — Minimal stylesheet */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #222;
+    background: #fff;
+}
+
+a {
+    color: #2457a7;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 4%;
+    background: #fff;
+    color: #222;
+    border-bottom: 1px solid #ddd;
+    box-shadow: none;
+}
+
+.nav-brand {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 14px;
+}
+
+.nav-links a {
+    padding: 5px 0;
+    color: #333;
+    font-size: 13px;
+    font-weight: 400;
+    border-radius: 0;
+    transition: none;
+}
+
+.nav-links a:hover,
+.nav-links a:focus-visible {
+    background: transparent;
+    color: #2457a7;
+}
+
+header {
+    padding: 22px 4%;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+}
+
+header h1 {
+    margin: 0 0 5px;
+    font-size: 25px;
+    line-height: 1.3;
+    letter-spacing: 0;
+}
+
+header p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+
+main {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px 4%;
+}
+
+h2 {
+    margin: 0 0 12px;
+    font-size: 19px;
+    letter-spacing: 0;
+}
+
+h3 {
+    font-size: 15px;
+}
+
+p {
+    overflow-wrap: anywhere;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.card,
+.welcome {
+    min-width: 0;
+    margin-top: 12px;
+    padding: 16px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    box-shadow: none;
+    transition: none;
+}
+
+.card:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.card h3 {
+    margin: 0 0 8px;
+    color: #555;
+    font-weight: 600;
+}
+
+.card p {
+    margin: 0;
+    color: #222;
+    font-size: 27px;
+    font-weight: 700;
+    line-height: 1.3;
+    font-variant-numeric: tabular-nums;
+}
+
+.welcome h2 {
+    margin-bottom: 8px;
+}
+
+.welcome > p {
+    color: #555;
+}
+
+.alert {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+.alert-low {
+    background: #fff9e8;
+    border-color: #e6d49a;
+    color: #725510;
+}
+
+.alert-out {
+    background: #fff0f0;
+    border-color: #e5baba;
+    color: #8b2222;
+}
+
+.alert-ok {
+    background: #f2f8f2;
+    border-color: #c8ddc8;
+    color: #285d28;
+}
+
+form {
+    display: grid;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+form div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+label {
+    color: #333;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    max-width: 100%;
+    padding: 9px 10px;
+    color: #222;
+    background: #fff;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+    font: inherit;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 2px solid #b7ccef;
+    outline-offset: 1px;
+}
+
+button,
+.btn {
+    display: inline-block;
+    width: fit-content;
+    max-width: 100%;
+    padding: 8px 13px;
+    color: #fff;
+    background: #2457a7;
+    border: 1px solid #2457a7;
+    border-radius: 3px;
+    font: inherit;
+    cursor: pointer;
+}
+
+button:hover,
+.btn:hover {
+    background: #194580;
+}
+
+table {
+    width: 100%;
+    margin: 12px 0 20px;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+th,
+td {
+    padding: 9px 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+    vertical-align: top;
+}
+
+th {
+    background: #f4f4f4;
+    font-weight: 700;
+}
+
+tr:nth-child(even) td {
+    background: #fafafa;
+}
+
+img,
+canvas,
+svg {
+    max-width: 100%;
+}
+
+@media (max-width: 700px) {
+    .navbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .nav-links {
+        gap: 8px 12px;
+    }
+
+    header,
+    main {
+        padding: 16px;
+    }
+
+    .cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 400px) {
+    .cards {
+        grid-template-columns: 1fr;
+    }
+}

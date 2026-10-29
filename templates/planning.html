@@ -1,0 +1,71 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Planning Settings</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<main>
+    <h1>Planning Settings: {{ product.name }}</h1>
+    <p>Configure the assumptions used by the replenishment engine.</p>
+
+    <p>
+        <a href="{{ url_for('replenishment') }}">Back to Replenishment</a>
+    </p>
+
+    {% if error %}
+        <p role="alert"><strong>{{ error }}</strong></p>
+    {% endif %}
+
+    <form method="POST">
+        <label for="avg_daily_demand">Average daily demand (units)</label>
+        <input id="avg_daily_demand" name="avg_daily_demand"
+               type="number" min="0" step="0.1" required
+               value="{{ planning.avg_daily_demand }}">
+
+        <label for="demand_stddev">Daily demand standard deviation</label>
+        <input id="demand_stddev" name="demand_stddev"
+               type="number" min="0" step="0.1" required
+               value="{{ planning.demand_stddev }}">
+
+        <label for="lead_time_days">Supplier lead time (days)</label>
+        <input id="lead_time_days" name="lead_time_days"
+               type="number" min="0" step="1" required
+               value="{{ planning.lead_time_days }}">
+
+        <label for="unit_cost">Purchase cost per unit (₹)</label>
+        <input id="unit_cost" name="unit_cost"
+               type="number" min="0" step="0.01" required
+               value="{{ planning.unit_cost }}">
+
+        <label for="ordering_cost">Cost per order (₹)</label>
+        <input id="ordering_cost" name="ordering_cost"
+               type="number" min="0" step="0.01" required
+               value="{{ planning.ordering_cost }}">
+
+        <label for="holding_cost_per_unit_year">
+            Annual holding cost per unit (₹)
+        </label>
+        <input id="holding_cost_per_unit_year"
+               name="holding_cost_per_unit_year"
+               type="number" min="0.01" step="0.01" required
+               value="{{ planning.holding_cost_per_unit_year }}">
+
+        <label for="service_level">Target service level (0–1)</label>
+        <input id="service_level" name="service_level"
+               type="number" min="0.01" max="0.99" step="0.01" required
+               value="{{ planning.service_level }}">
+
+        <label for="minimum_order_qty">Minimum order quantity</label>
+        <input id="minimum_order_qty" name="minimum_order_qty"
+               type="number" min="1" step="1" required
+               value="{{ planning.minimum_order_qty }}">
+
+        <button type="submit">Save Planning Settings</button>
+    </form>
+</main>
+</body>
+</html>

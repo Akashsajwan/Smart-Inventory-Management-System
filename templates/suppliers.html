@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Suppliers - Smart Warehouse</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<nav class="navbar">
+
+    <div class="nav-brand">
+        Smart Warehouse
+    </div>
+
+    <div class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/products">Products</a>
+        <a href="/stock">Stock Management</a>
+        <a href="/suppliers">Suppliers</a>
+        <a href="/inventory">Inventory</a>
+    </div>
+
+</nav>
+
+<header>
+    <h1>Supplier Management</h1>
+    <p>Manage warehouse suppliers</p>
+</header>
+
+<main>
+
+    <section class="welcome">
+
+        <h2>Add Supplier</h2>
+
+        <form method="POST">
+
+            <div>
+                <label>Supplier Name</label>
+
+                <input
+                    type="text"
+                    name="name"
+                    required
+                >
+            </div>
+
+            <div>
+                <label>Phone</label>
+
+                <input
+                    type="text"
+                    name="phone"
+                >
+            </div>
+
+            <div>
+                <label>Email</label>
+
+                <input
+                    type="email"
+                    name="email"
+                >
+            </div>
+
+            <button type="submit">
+                Add Supplier
+            </button>
+
+        </form>
+
+    </section>
+
+
+    <section class="welcome">
+
+        <h2>Suppliers</h2>
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for supplier in suppliers %}
+
+                <tr>
+
+                    <td>{{ supplier.id }}</td>
+                    <td>{{ supplier.name }}</td>
+                    <td>{{ supplier.phone }}</td>
+                    <td>{{ supplier.email }}</td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </section>
+
+</main>
+
+</body>
+</html>

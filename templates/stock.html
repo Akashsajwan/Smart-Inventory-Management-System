@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Management | Smart Warehouse</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .stock-intro{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:22px}
+        .stock-intro p,.stock-muted{color:var(--muted);font-size:14px;margin-top:5px}
+        .stock-card{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:22px;box-shadow:var(--shadow)}
+        .stock-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:22px}
+        .stock-field{display:flex;flex-direction:column;gap:8px}
+        .stock-field label{font-size:13px;font-weight:700;color:#334155}
+        .stock-field input,.stock-field select{width:100%;min-width:0}
+        .stock-field.full{grid-column:1/-1}
+        .stock-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+        .stock-actions button{min-height:43px}
+        .stock-note{padding:14px 16px;margin-top:20px;border:1px solid #cfe5ff;background:#eff6ff;color:#1e40af;border-radius:10px;font-size:13px}
+        .stock-table-wrap{width:100%;overflow-x:auto;margin-top:18px}
+        .stock-table{width:100%;min-width:650px;border-collapse:collapse}
+        .stock-table th,.stock-table td{padding:14px 15px;text-align:left;border-bottom:1px solid var(--border);font-size:13px}
+        .stock-table th{background:#f1f5f9;color:#475569;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+        .stock-table tbody tr:hover{background:#f8fafc}
+        .stock-id{font-weight:750;color:#64748b}
+        .stock-badge{display:inline-block;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:750}
+        .stock-in{background:#dcfce7;color:#166534}
+        .stock-out{background:#fee2e2;color:#991b1b}
+        .stock-qty{font-weight:750;font-variant-numeric:tabular-nums}
+        .stock-empty{text-align:center;padding:30px;color:var(--muted)}
+        .stock-history-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+        @media(max-width:650px){.stock-card{padding:17px}.stock-form{grid-template-columns:1fr}.stock-field.full{grid-column:auto}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">📦 Smart Warehouse</div>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/products">Products</a>
+            <a href="/stock">Stock Management</a>
+            <a href="/suppliers">Suppliers</a>
+            <a href="/inventory">Inventory</a>
+            <a href="/replenishment">Replenishment</a>
+            <a href="/purchase-orders">Purchase Orders</a>
+            <a href="/simulation">Simulation</a>
+        </div>
+    </nav>
+
+    <header>
+        <h1>Stock Management</h1>
+        <p>Record stock movements and review your transaction history.</p>
+    </header>
+
+    <main>
+        <div class="stock-intro">
+            <div>
+                <h2>Inventory Transactions</h2>
+                <p>Record incoming stock or outgoing stock for a product.</p>
+            </div>
+            <a class="button" href="/inventory">View Inventory →</a>
+        </div>
+
+        <section class="stock-card">
+            <h2>↕ Stock IN / Stock OUT</h2>
+            <p class="stock-muted">Choose the product, movement type, and quantity.</p>
+
+            <form method="POST" action="{{ url_for('stock') }}" class="stock-form">
+                <div class="stock-field full">
+                    <label for="product_id">Product</label>
+                    <select id="product_id" name="product_id" required>
+                        <option value="">Select a product</option>
+                        {% for product in products %}
+                        <option value="{{ product.id }}">{{ product.name }} — Current stock: {{ product.current_stock }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="stock-field">
+                    <label for="transaction_type">Transaction Type</label>
+                    <select id="transaction_type" name="transaction_type" required>
+                        <option value="IN">Stock IN — Add stock</option>
+                        <option value="OUT">Stock OUT — Remove stock</option>
+                    </select>
+                </div>
+
+                <div class="stock-field">
+                    <label for="quantity">Quantity</label>
+                    <input id="quantity" type="number" name="quantity" min="1" step="1" placeholder="Enter quantity" required>
+                </div>
+
+                <div class="stock-field full stock-actions">
+                    <button type="submit">Record Transaction</button>
+                    <span class="stock-muted">Stock OUT must not exceed available stock.</span>
+                </div>
+            </form>
+
+            <div class="stock-note">
+                <strong>Important:</strong> Stock IN increases available inventory; Stock OUT decreases it. Each successful movement should be recorded in the transaction history.
+            </div>
+        </section>
+
+        <section class="stock-card">
+            <div class="stock-history-head">
+                <div>
+                    <h2>Transaction History</h2>
+                    <p class="stock-muted">Recent recorded inventory movements.</p>
+                </div>
+                <span class="stock-badge" style="background:#e2e8f0;color:#334155">
+                    {{ transactions|length }} shown
+                </span>
+            </div>
+
+            <div class="stock-table-wrap">
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Product</th>
+                            <th>Movement</th>
+                            <th>Quantity</th>
+                            <th>Date &amp; Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td class="stock-id">#{{ transaction.id }}</td>
+                            <td>
+                                {% if transaction.product %}
+                                    {{ transaction.product.name }}
+                                {% else %}
+                                    Product #{{ transaction.product_id }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if transaction.transaction_type == 'IN' %}
+                                    <span class="stock-badge stock-in">↑ Stock IN</span>
+                                {% else %}
+                                    <span class="stock-badge stock-out">↓ Stock OUT</span>
+                                {% endif %}
+                            </td>
+                            <td class="stock-qty">{{ transaction.quantity }} units</td>
+                            <td>{{ transaction.date }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="stock-empty">No transactions recorded yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

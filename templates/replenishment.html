@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Replenishment | Smart Warehouse</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .page-intro {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .page-intro p,
+        .panel-description {
+            color: var(--muted);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .planning-cards {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .planning-card {
+            padding: 22px;
+            background: white;
+            border: 1px solid var(--border);
+            border-top: 3px solid var(--green);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .planning-card.warning {
+            border-top-color: #d99a19;
+        }
+
+        .planning-card.danger {
+            border-top-color: #dc2626;
+        }
+
+        .planning-card span {
+            display: block;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .planning-card strong {
+            display: block;
+            margin-top: 8px;
+            font-size: 29px;
+            line-height: 1.25;
+            color: var(--navy);
+        }
+
+        .planning-panel {
+            padding: 24px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 22px;
+        }
+
+        .panel-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .panel-heading h2 {
+            margin-bottom: 0;
+        }
+
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .planning-table {
+            min-width: 1000px;
+        }
+
+        .planning-table th,
+        .planning-table td {
+            padding: 14px 12px;
+        }
+
+        .planning-table th {
+            white-space: nowrap;
+        }
+
+        .planning-table td {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .planning-table td:first-child {
+            font-variant-numeric: normal;
+        }
+
+        .product-name {
+            display: block;
+            font-weight: 750;
+            color: var(--text);
+        }
+
+        .configure-link {
+            display: inline-block;
+            margin-top: 5px;
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        .decision-badge {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 750;
+            white-space: nowrap;
+        }
+
+        .decision-reorder {
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .decision-sufficient {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .quantity {
+            font-weight: 750;
+        }
+
+        .order-quantity {
+            color: var(--green);
+        }
+
+        .planning-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 18px;
+            background: #eff6ff;
+            border: 1px solid #cfe5ff;
+            border-radius: 12px;
+            color: #1e40af;
+            margin-bottom: 22px;
+        }
+
+        .planning-note p {
+            font-size: 13px;
+        }
+
+        .formula-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 18px;
+        }
+
+        .formula-item {
+            padding: 17px;
+            border: 1px solid var(--border);
+            background: #f8fafc;
+            border-radius: 10px;
+        }
+
+        .formula-item strong {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--navy);
+        }
+
+        .formula-item p {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .formula {
+            display: block;
+            margin-top: 8px;
+            color: var(--green);
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 13px;
+            overflow-wrap: anywhere;
+        }
+
+        .empty-state {
+            padding: 30px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        @media (max-width: 700px) {
+            .planning-cards,
+            .formula-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .planning-panel {
+                padding: 17px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">📦 Smart Warehouse</div>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/products">Products</a>
+            <a href="/stock">Stock Management</a>
+            <a href="/suppliers">Suppliers</a>
+            <a href="/inventory">Inventory</a>
+            <a href="/replenishment">Replenishment</a>
+            <a href="/purchase-orders">Purchase Orders</a>
+            <a href="/simulation">Simulation</a>
+        </div>
+    </nav>
+
+    <header>
+        <h1>Replenishment Planning</h1>
+        <p>Use inventory planning formulas to identify when and how much to reorder.</p>
+    </header>
+
+    <main>
+        {% set ns = namespace(total=0, reorder_count=0, order_units=0) %}
+        {% for item in recommendations %}
+            {% set ns.total = ns.total + 1 %}
+            {% if item.needs_reorder %}
+                {% set ns.reorder_count = ns.reorder_count + 1 %}
+                {% set ns.order_units = ns.order_units + item.suggested_quantity %}
+            {% endif %}
+        {% endfor %}
+
+        <div class="page-intro">
+            <div>
+                <h2>Inventory Decision Support</h2>
+                <p>Review formula-based recommendations before creating purchase orders.</p>
+            </div>
+            <a class="button" href="/purchase-orders">View Purchase Orders →</a>
+        </div>
+
+        <section class="planning-cards">
+            <div class="planning-card">
+                <span>Products Analysed</span>
+                <strong>{{ ns.total }}</strong>
+            </div>
+
+            <div class="planning-card {% if ns.reorder_count > 0 %}danger{% endif %}">
+                <span>Products Requiring Reorder</span>
+                <strong>{{ ns.reorder_count }}</strong>
+            </div>
+
+            <div class="planning-card warning">
+                <span>Total Suggested Order Units</span>
+                <strong>{{ ns.order_units }}</strong>
+            </div>
+        </section>
+<section class="planning-panel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Replenishment Recommendations</h2>
+                    <p class="panel-description">
+                        Compare stock availability, planning thresholds and suggested quantities.
+                    </p>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="planning-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>On Hand</th>
+                            <th>On Order</th>
+                            <th>Inventory Position</th>
+                            <th>Safety Stock</th>
+                            <th>Reorder Point</th>
+                            <th>EOQ</th>
+                            <th>Suggested Order</th>
+                            <th>Decision</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in recommendations %}
+                            <tr>
+                                <td>
+                                    <span class="product-name">{{ item.product.name }}</span>
+                                    <a class="configure-link"
+                                       href="{{ url_for('edit_planning', product_id=item.product.id) }}">
+                                        Configure planning
+                                    </a>
+                                </td>
+                                <td>{{ item.product.current_stock }}</td>
+                                <td>{{ item.on_order }}</td>
+                                <td><strong>{{ item.position }}</strong></td>
+                                <td>{{ item.safety_stock }}</td>
+                                <td>{{ item.reorder_point }}</td>
+                                <td>{{ item.eoq }}</td>
+                                <td>
+                                    <span class="quantity {% if item.needs_reorder %}order-quantity{% endif %}">
+                                        {{ item.suggested_quantity }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if item.needs_reorder %}
+                                        <span class="decision-badge decision-reorder">
+                                            ● Reorder
+                                        </span>
+                                    {% else %}
+                                        <span class="decision-badge decision-sufficient">
+                                            ● Sufficient
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="9">
+                                    <div class="empty-state">
+                                        <strong>No products available for planning.</strong>
+                                        <p>Add products before generating recommendations.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="planning-panel">
+            <h2>Understanding the OR Calculations</h2>
+            <p class="panel-description">
+                These formulas support inventory control and replenishment decisions.
+            </p>
+
+            <div class="formula-grid">
+                <div class="formula-item">
+                    <strong>1. Safety Stock (SS)</strong>
+                    <p>Buffer stock intended to protect against demand variability during lead time.</p>
+                    <span class="formula">SS = Z × σ × √L</span>
+                </div>
+
+                <div class="formula-item">
+                    <strong>2. Reorder Point (ROP)</strong>
+                    <p>The inventory threshold that triggers a replenishment decision.</p>
+                    <span class="formula">ROP = Average Daily Demand × Lead Time + SS</span>
+                </div>
+
+                <div class="formula-item">
+                    <strong>3. Economic Order Quantity (EOQ)</strong>
+                    <p>Balances estimated ordering and annual holding costs under the basic EOQ model.</p>
+                    <span class="formula">EOQ = √(2 × D × S / H)</span>
+                </div>
+
+                <div class="formula-item">
+                    <strong>4. Inventory Position</strong>
+                    <p>Includes available stock and outstanding orders, minus backorders if tracked.</p>
+                    <span class="formula">Position = On Hand + On Order − Backorders</span>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

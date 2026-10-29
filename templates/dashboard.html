@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Smart Warehouse</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .page-intro {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 26px;
+        }
+        .page-intro p { color: var(--muted); margin-top: 5px; }
+        .section-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .section-heading h2 { margin: 0; }
+        .kpi-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .kpi-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: #e8f6ef;
+            font-size: 18px;
+        }
+        .card.kpi-danger { border-top-color: #dc2626; }
+        .card.kpi-warning { border-top-color: #d99a19; }
+        .card.kpi-danger .kpi-icon { background: #fff0f0; }
+        .card.kpi-warning .kpi-icon { background: #fff7df; }
+        .card.kpi-neutral { border-top-color: #4779b8; }
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+        }
+        .action-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+            padding: 17px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: white;
+            color: var(--text);
+            transition: border-color .2s, transform .2s;
+        }
+        .action-link:hover {
+            border-color: var(--green);
+            color: var(--text);
+            transform: translateY(-2px);
+        }
+        .action-icon {
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: #e8f6ef;
+            font-size: 20px;
+        }
+        .action-link strong { display: block; font-size: 14px; }
+        .action-link small { display: block; color: var(--muted); margin-top: 3px; }
+        .alert-list { display: grid; gap: 10px; }
+        .alert { margin-top: 0; }
+        .alert a { font-weight: 700; text-decoration: underline; }
+        .empty-state {
+            padding: 20px;
+            border: 1px dashed var(--border);
+            border-radius: 10px;
+            color: var(--muted);
+            text-align: center;
+        }
+        .dashboard-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 18px;
+            margin-top: 24px;
+            border: 1px solid #cfe5ff;
+            border-radius: 12px;
+            background: #eff6ff;
+            color: #1e40af;
+        }
+        .dashboard-note p { font-size: 14px; }
+        @media (max-width: 1000px) {
+            .quick-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 600px) {
+            .quick-actions { grid-template-columns: 1fr; }
+            .action-link { padding: 14px; }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">📦 Smart Warehouse</div>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/products">Products</a>
+            <a href="/stock">Stock Management</a>
+            <a href="/suppliers">Suppliers</a>
+            <a href="/inventory">Inventory</a>
+            <a href="/replenishment">Replenishment</a>
+            <a href="/purchase-orders">Purchase Orders</a>
+            <a href="/simulation">Simulation</a>
+        </div>
+    </nav>
+
+    <header>
+        <h1>Warehouse Dashboard</h1>
+        <p>Monitor inventory, identify stock risks, and make smarter replenishment decisions.</p>
+    </header>
+
+    <main>
+        <section class="page-intro">
+            <div>
+                <h2>Overview</h2>
+                <p>Your warehouse at a glance.</p>
+            </div>
+            <a class="button" href="/products">＋ Add or Manage Products</a>
+        </section>
+
+        <section class="cards">
+            <div class="card kpi-neutral">
+                <div class="kpi-label">
+                    <h3>Total Products</h3>
+                    <span class="kpi-icon">📦</span>
+                </div>
+                <p>{{ total_products }}</p>
+            </div>
+
+            <div class="card">
+                <div class="kpi-label">
+                    <h3>Total Units in Stock</h3>
+                    <span class="kpi-icon">🏬</span>
+                </div>
+                <p>{{ total_stock }}</p>
+            </div>
+
+            <div class="card kpi-warning">
+                <div class="kpi-label">
+                    <h3>Low-Stock Items</h3>
+                    <span class="kpi-icon">⚠️</span>
+                </div>
+                <p>{{ low_stock }}</p>
+            </div>
+
+            <div class="card kpi-danger">
+                <div class="kpi-label">
+                    <h3>Out-of-Stock Items</h3>
+                    <span class="kpi-icon">🚨</span>
+                </div>
+                <p>{{ out_of_stock }}</p>
+            </div>
+        </section>
+
+        <section class="welcome">
+            <div class="section-heading">
+                <h2>Quick Actions</h2>
+            </div>
+            <div class="quick-actions">
+                <a class="action-link" href="/products">
+                    <span class="action-icon">＋</span>
+                    <span>
+                        <strong>Products</strong>
+                        <small>Add, edit and manage items</small>
+                    </span>
+                </a>
+
+                <a class="action-link" href="/stock">
+                    <span class="action-icon">↕️</span>
+                    <span>
+                        <strong>Manage Stock</strong>
+                        <small>Record stock IN and OUT</small>
+                    </span>
+                </a>
+
+                <a class="action-link" href="/replenishment">
+                    <span class="action-icon">🧮</span>
+                    <span>
+                        <strong>Replenishment</strong>
+                        <small>Review replenishment</small>
+                    </span>
+                </a>
+
+                <a class="action-link" href="/purchase-orders">
+                    <span class="action-icon">📝</span>
+                    <span>
+                        <strong>Purchase Orders</strong>
+                        <small>Create and receive orders</small>
+                    </span>
+                </a>
+
+                <a class="action-link" href="/inventory">
+                    <span class="action-icon">📋</span>
+                    <span>
+                        <strong>Inventory Register</strong>
+                        <small>Review current inventory</small>
+                    </span>
+                </a>
+
+                <a class="action-link" href="/suppliers">
+                    <span class="action-icon">🏭</span>
+                    <span>
+                        <strong>Suppliers</strong>
+                        <small>Manage supplier details</small>
+                    </span>
+                </a>
+
+                <a class="action-link" href="/simulation">
+                    <span class="action-icon">📊</span>
+                    <span>
+                        <strong>Run Simulation</strong>
+                        <small>Compare replenishment policies</small>
+                    </span>
+                </a>
+
+                <a class="action-link" href="/products">
+                    <span class="action-icon">🔍</span>
+                    <span>
+                        <strong>Review Products</strong>
+                        <small>Check product stock levels</small>
+                    </span>
+                </a>
+            </div>
+        </section>
+
+        <section class="welcome">
+            <div class="section-heading">
+                <h2>Inventory Alerts</h2>
+                <a href="/inventory">View inventory →</a>
+            </div>
+
+            {% if alerts %}
+                <div class="alert-list">
+                    {% for product in alerts %}
+                        {% if product.current_stock == 0 %}
+                            <div class="alert alert-out">
+                                🔴 <strong>{{ product.name }}</strong>
+                                — Out of stock.
+                                <a href="/purchase-orders">Review purchasing</a>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-low">
+                                🟡 <strong>{{ product.name }}</strong>
+                                — Only {{ product.current_stock }} units remaining.
+                                <a href="/replenishment">Review reorder recommendation</a>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-ok">
+                    🟢 All products have sufficient stock according to the current stock thresholds.
+                </div>
+            {% endif %}
+        </section>
+</main>
+</body>
+</html>

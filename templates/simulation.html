@@ -1,0 +1,2105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation | Smart Warehouse</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .sim-intro {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .sim-intro p,
+        .sim-description {
+            color: var(--muted);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .sim-panel {
+            padding: 24px;
+            margin-bottom: 22px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .sim-panel h2 { margin-bottom: 4px; }
+
+        .sim-config {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            align-items: end;
+            margin-top: 22px;
+        }
+
+        .sim-config button {
+            width: 100%;
+            min-height: 43px;
+        }
+
+        .sim-error {
+            padding: 14px 16px;
+            margin-bottom: 20px;
+            color: #991b1b;
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            border-radius: 10px;
+        }
+
+        .sim-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .sim-chip {
+            display: inline-block;
+            padding: 7px 11px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: #f8fafc;
+            color: #475569;
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        .sim-kpis {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            margin: 20px 0;
+        }
+
+        .sim-kpi {
+            padding: 19px;
+            background: white;
+            border: 1px solid var(--border);
+            border-top: 3px solid #4779b8;
+            border-radius: 12px;
+        }
+
+        .sim-kpi.green { border-top-color: var(--green); }
+        .sim-kpi.red { border-top-color: #dc2626; }
+        .sim-kpi.amber { border-top-color: #d99a19; }
+
+        .sim-kpi span {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        .sim-kpi strong {
+            display: block;
+            margin-top: 7px;
+            color: var(--navy);
+            font-size: clamp(22px, 2.4vw, 30px);
+            line-height: 1.25;
+            overflow-wrap: anywhere;
+        }
+
+        .sim-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .sim-table {
+            min-width: 600px;
+        }
+
+        .sim-table th,
+        .sim-table td {
+            padding: 13px 14px;
+        }
+
+        .sim-table td:first-child {
+            font-weight: 650;
+        }
+
+        .policy-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .policy-heading h3 { font-size: 17px; }
+
+        .policy-tag {
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: #e8f6ef;
+            color: #166534;
+            font-size: 11px;
+            font-weight: 750;
+        }
+
+        .report-download-panel { border-left: 4px solid #4779b8; }
+        .report-download-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 43px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: #17365d;
+            color: #ffffff;
+            font-weight: 700;
+            text-decoration: none;
+            text-align: center;
+        }
+        .report-download-link:hover { background: #244d7d; color: #ffffff; }
+
+        .daily-table { min-width: 590px; }
+
+        .bar-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 190px;
+        }
+
+        .bar-track {
+            width: 120px;
+            height: 10px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: #e2e8f0;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: inherit;
+        }
+
+        .bar-sales { background: #16a34a; }
+        .bar-lost { background: #dc2626; }
+
+        .bar-value {
+            min-width: 24px;
+            font-weight: 750;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .sim-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 17px;
+            margin-bottom: 22px;
+            color: #1e40af;
+            background: #eff6ff;
+            border: 1px solid #cfe5ff;
+            border-radius: 12px;
+        }
+
+        .sim-note p { font-size: 13px; }
+
+        .empty-history {
+            padding: 25px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+
+        .sim-chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 18px; }
+        .sim-chart-card { min-width: 0; padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: #fbfdff; display: flex; flex-direction: column; justify-content: space-between; }
+        .sim-chart-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+        .sim-chart-card h3 { font-size: 16px; margin: 0 0 4px 0; color: var(--navy); }
+        .sim-chart-card canvas { display: block; width: 100%; height: 270px; margin-top: 6px; }
+        .sim-chart-explanation {
+            margin-top: 12px;
+            padding: 10px 14px;
+            background: #f8fafc;
+            border-left: 3px solid #0284c7;
+            border-radius: 0 8px 8px 0;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #334155;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .sim-expl-icon { font-size: 15px; line-height: 1.3; flex-shrink: 0; }
+        .sim-expl-body { flex: 1; min-width: 0; }
+        .sim-expl-title { font-weight: 700; color: #0f172a; margin-bottom: 3px; font-size: 12.5px; }
+        .sim-expl-body p { margin: 2px 0; }
+        .sim-expl-tag {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .sim-expl-tag-red { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+        .sim-expl-tag-amber { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
+        .sim-expl-tag-purple { background: #ede9fe; color: #6366f1; border: 1px solid #ddd6fe; }
+        .sim-expl-tag-gray { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+        .sim-chart-legend { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 15px; font-size: 13px; color: var(--muted); }
+        .sim-chart-legend span { display: inline-flex; align-items: center; gap: 7px; }
+        .sim-chart-legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; }
+        .legend-fixed { background: #1e3a8a; }
+        .legend-rop { background: #0d9488; }
+        .legend-purchase { background: #1e3a8a; }
+        .legend-ordering { background: #d97706; }
+        .legend-holding { background: #059669; }
+        .legend-sales { background: #16a34a; }
+        .legend-lost { background: #dc2626; }
+        .btn-save-chart {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 9px;
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 650;
+            cursor: pointer;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.15s, color 0.15s;
+        }
+        .btn-save-chart:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        .report-download-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 18px;
+        }
+        .report-download-pdf {
+            background: #0d9488 !important;
+        }
+        .report-download-pdf:hover {
+            background: #0f766e !important;
+        }
+        .report-download-csv {
+            background: #475569 !important;
+        }
+        .report-download-csv:hover {
+            background: #334155 !important;
+        }
+        .period-total-row { background: #f1f5f9; font-weight: 750; }
+        .sim-ml-panel {
+            border-left: 4px solid #7c3aed;
+        }
+        .badge-danger {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .badge-warning {
+            background: #fef3c7;
+            color: #d97706;
+            border: 1px solid #fde68a;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .badge-success {
+            background: #e8f6ef;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .btn-random-seed {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 9px 12px;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 650;
+            cursor: pointer;
+            color: #334155;
+            transition: background 0.15s, color 0.15s;
+            white-space: nowrap;
+        }
+        .btn-random-seed:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        .ml-subheading {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--navy);
+            margin: 22px 0 10px 0;
+        }
+        .sim-guide-box {
+            padding: 18px 20px;
+            margin: 20px 0 24px 0;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-left: 5px solid #16a34a;
+            border-radius: 12px;
+        }
+        .sim-guide-title {
+            font-size: 15px;
+            font-weight: 750;
+            color: #14532d;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sim-guide-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .sim-guide-card {
+            background: white;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid #dcfce7;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        .sim-guide-card p {
+            margin: 6px 0 0 0;
+            font-size: 12px;
+            color: #374151;
+            line-height: 1.45;
+        }
+        .guide-badge-blue {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            font-weight: 750;
+            font-size: 11.5px;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+        .guide-badge-green {
+            display: inline-block;
+            background: #ccfbf1;
+            color: #0f766e;
+            font-weight: 750;
+            font-size: 11.5px;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+        .guide-badge-red {
+            display: inline-block;
+            background: #fee2e2;
+            color: #b91c1c;
+            font-weight: 750;
+            font-size: 11.5px;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+        .guide-badge-purple {
+            display: inline-block;
+            background: #f3e8ff;
+            color: #6b21a8;
+            font-weight: 750;
+            font-size: 11.5px;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+        @media (max-width: 900px) {
+            .sim-guide-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 500px) {
+            .sim-guide-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 900px) {
+            .sim-chart-grid { grid-template-columns: 1fr; }
+            .report-download-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 950px) {
+            .sim-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .sim-config { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 600px) {
+            .sim-panel { padding: 17px; }
+            .sim-kpis, .sim-config { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">📦 Smart Warehouse</div>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/products">Products</a>
+            <a href="/stock">Stock Management</a>
+            <a href="/suppliers">Suppliers</a>
+            <a href="/inventory">Inventory</a>
+            <a href="/replenishment">Replenishment</a>
+            <a href="/purchase-orders">Purchase Orders</a>
+            <a href="/simulation">Simulation</a>
+        </div>
+    </nav>
+
+    <header>
+        <h1>Inventory Simulation</h1>
+        <p>Compare replenishment strategies under the same simulated conditions.</p>
+    </header>
+
+    <main>
+        <div class="sim-intro">
+            <div>
+                <h2>Policy Experiment Workspace</h2>
+                <p>Test how inventory policies respond to simulated demand.</p>
+            </div>
+            <a class="button" href="/replenishment">View OR Recommendations →</a>
+        </div>
+
+        {% if error %}
+            <div class="sim-error" role="alert">
+                <strong>Simulation could not run:</strong> {{ error }}
+            </div>
+        {% endif %}
+
+        <section class="sim-panel">
+            <h2>Configure Simulation</h2>
+            <p class="sim-description">
+                Simulate 10 sample warehouse products over exactly 7 days. Your real inventory remains unchanged.
+            </p>
+
+            <form method="POST" action="{{ url_for('simulation') }}" class="sim-config">
+                <input type="hidden" name="demand_source" value="warehouse_demo">
+
+                <div>
+                    <label for="store_type">Store Type</label>
+                    <select id="store_type" name="store_type">
+                        <option value="general" {% if store_type|default('general') == 'general' %}selected{% endif %}>General Store</option>
+                        <option value="grocery" {% if store_type|default('') == 'grocery' %}selected{% endif %}>Grocery</option>
+                        <option value="electronics" {% if store_type|default('') == 'electronics' %}selected{% endif %}>Electronics</option>
+                        <option value="clothing" {% if store_type|default('') == 'clothing' %}selected{% endif %}>Clothing</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Simulation Duration</label>
+                    <input type="text" value="7 days (fixed requirement)" readonly aria-label="Simulation duration fixed at seven days">
+                    <input type="hidden" id="duration_days" name="duration_days" value="7">
+                </div>
+
+                <div>
+                    <label for="scenario">Business Scenario</label>
+                    <select id="scenario" name="scenario">
+                        <option value="normal" {% if scenario|default('normal') == 'normal' %}selected{% endif %}>Normal demand</option>
+                        <option value="demand_spike" {% if scenario|default('normal') == 'demand_spike' %}selected{% endif %}>Demand spike</option>
+                        <option value="supplier_delay" {% if scenario|default('normal') == 'supplier_delay' %}selected{% endif %}>Supplier delay (+2 days)</option>
+                        <option value="low_stock" {% if scenario|default('normal') == 'low_stock' %}selected{% endif %}>Low opening stock (50%)</option>
+                        <option value="combined_stress" {% if scenario|default('normal') == 'combined_stress' %}selected{% endif %}>Combined stress test</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="random_seed">Random Seed</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input
+                            id="random_seed"
+                            name="random_seed"
+                            type="number"
+                            min="0"
+                            max="2147483647"
+                            value="{{ random_seed|default(42) }}"
+                            required
+                            style="flex: 1;"
+                        >
+                        <button type="button" id="btn-random-seed" class="btn-random-seed" title="Generate new random seed">🎲 Random</button>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit">▶ Run Policy Comparison</button>
+                </div>
+            </form>
+            <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const btnRandom = document.getElementById("btn-random-seed");
+                if (btnRandom) {
+                    btnRandom.addEventListener("click", () => {
+                        const seedInput = document.getElementById("random_seed");
+                        if (seedInput) {
+                            seedInput.value = Math.floor(Math.random() * 900000) + 10000;
+                        }
+                    });
+                }
+            });
+            </script>
+        </section>
+
+        {% if results %}
+            {% set fixed = results['fixed_threshold'] %}
+            {% set rop = results['reorder_point'] %}
+            {% set fixed_summary = fixed['summary'] %}
+            {% set rop_summary = rop['summary'] %}
+
+            <div class="sim-meta">
+                <span class="sim-chip">Store: {{ store_type|default('general')|title }}</span>
+                <span class="sim-chip">Duration: {{ fixed['duration_days'] }} days</span>
+                <span class="sim-chip">Random seed: {{ fixed['random_seed'] }}</span>
+                <span class="sim-chip">Scenario: {{ fixed.get('scenario_label', 'Normal demand') }}</span>
+                <span class="sim-chip">Controlled simulation comparison</span>
+            </div>
+
+            <!-- Beginner-Friendly Quick Color Guide -->
+            <div class="sim-guide-box">
+                <div class="sim-guide-title">💡 How to Read Everything in 10 Seconds (Super Easy Color Guide)</div>
+                <div class="sim-guide-grid">
+                    <div class="sim-guide-card">
+                        <span class="guide-badge-blue">🔵 Blue = Fixed Rule</span>
+                        <p><strong>The simple method:</strong> Always reorders the exact same fixed batch size regardless of changes in customer demand.</p>
+                    </div>
+                    <div class="sim-guide-card">
+                        <span class="guide-badge-green">🟢 Green = Smart Rule (ROP)</span>
+                        <p><strong>The smart method:</strong> Uses math to calculate the perfect time and optimal order quantity so you don't overspend on storage.</p>
+                    </div>
+                    <div class="sim-guide-card">
+                        <span class="guide-badge-red">🔴 Red = Empty Shelf / Danger</span>
+                        <p><strong>Lost sales or stockout danger:</strong> Customers wanted to buy, but your shelves ran completely out of items!</p>
+                    </div>
+                    <div class="sim-guide-card">
+                        <span class="guide-badge-purple">🟣 Purple = AI Future Forecast</span>
+                        <p><strong>Machine Learning looking ahead:</strong> Predicts what customers will buy next week (Days 8–14) so you can restock in advance.</p>
+                    </div>
+                </div>
+            </div>
+
+            <section class="sim-panel report-download-panel">
+                <h2>Download Management Report</h2>
+                <p class="sim-description">
+                    Export the selected report period, policy comparison, stock remaining, restock status,
+                    lost sales estimate, daily inventory movements, visual charts, and event log.
+                </p>
+                <div class="report-download-grid">
+                    <div>
+                        <a class="button-link report-download-link"
+                           id="download-xlsx"
+                           href="{{ url_for('download_simulation_report', fixed_run_id=fixed['run_id'], rop_run_id=rop['run_id'], file_format='xlsx') }}">
+                            📊 Download Excel Report (.xlsx)
+                        </a>
+                    </div>
+                    <div>
+                        <a class="button-link report-download-link report-download-pdf"
+                           id="download-pdf"
+                           href="{{ url_for('download_simulation_report', fixed_run_id=fixed['run_id'], rop_run_id=rop['run_id'], file_format='pdf') }}">
+                            📄 Download Visual PDF Report (.pdf)
+                        </a>
+                    </div>
+                    <div>
+                        <a class="button-link report-download-link report-download-csv"
+                           id="download-csv"
+                           href="{{ url_for('download_simulation_report', fixed_run_id=fixed['run_id'], rop_run_id=rop['run_id'], file_format='csv') }}">
+                            📝 Download CSV Summary (.csv)
+                        </a>
+                    </div>
+                </div>
+                <p class="sim-description">
+                    Excel (.xlsx) includes an executive <strong>Visual Dashboard</strong> with all generated high-resolution charts plus native editable sheets. PDF (.pdf) includes a publication-grade multi-page executive report with all graphical figures. CSV opens in spreadsheet apps with tabular totals.
+                </p>
+            </section>
+
+            <section class="sim-panel" style="margin-top: 22px;">
+                <h2>Policy Comparison</h2>
+                <p class="sim-description">
+                    Compare service, sales and cost outcomes for both strategies.
+                </p>
+
+                <div class="sim-kpis">
+                    <div class="sim-kpi green">
+                        <span>Fixed Threshold · Units Sold</span>
+                        <strong>{{ fixed_summary['total_units_sold'] }}</strong>
+                    </div>
+                    <div class="sim-kpi green">
+                        <span>Reorder Point · Units Sold</span>
+                        <strong>{{ rop_summary['total_units_sold'] }}</strong>
+                    </div>
+                    <div class="sim-kpi red">
+                        <span>Fixed Threshold · Lost Units</span>
+                        <strong>{{ fixed_summary['total_lost_units'] }}</strong>
+                    </div>
+                    <div class="sim-kpi red">
+                        <span>Reorder Point · Lost Units</span>
+                        <strong>{{ rop_summary['total_lost_units'] }}</strong>
+                    </div>
+                </div>
+
+                <div class="sim-table-wrap">
+                    <table class="sim-table">
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Fixed Threshold</th>
+                                <th>Reorder Point</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Service Level</td>
+                                <td>{{ "%.2f"|format(fixed_summary['service_level'] * 100) }}%</td>
+                                <td>{{ "%.2f"|format(rop_summary['service_level'] * 100) }}%</td>
+                            </tr>
+                            <tr>
+                                <td>Revenue</td>
+                                <td>₹{{ "{:,.2f}".format(fixed_summary['total_revenue']) }}</td>
+                                <td>₹{{ "{:,.2f}".format(rop_summary['total_revenue']) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Purchase Cost</td>
+                                <td>₹{{ "{:,.2f}".format(fixed_summary['total_purchase_cost']) }}</td>
+                                <td>₹{{ "{:,.2f}".format(rop_summary['total_purchase_cost']) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Ordering Cost</td>
+                                <td>₹{{ "{:,.2f}".format(fixed_summary['total_ordering_cost']) }}</td>
+                                <td>₹{{ "{:,.2f}".format(rop_summary['total_ordering_cost']) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Holding Cost</td>
+                                <td>₹{{ "{:,.2f}".format(fixed_summary['total_holding_cost']) }}</td>
+                                <td>₹{{ "{:,.2f}".format(rop_summary['total_holding_cost']) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="sim-panel" id="graphical-summary">
+                <h2>Simulation Visual Analytics & Multi-Format Graphical Dashboard</h2>
+                <p class="sim-description">
+                    Executive visual graphs generated from the simulated warehouse run. Features diverse analytical chart types: financial cost donut rings, service level speedometer gauges, inventory line & area trajectories, daily cash-flow revenue trends, SKU lead-time scatter matrices, and demand fulfillment comparisons.
+                </p>
+
+                <div class="sim-chart-grid">
+                    <!-- Chart 1: Donut / Ring Chart -->
+                    <div class="sim-chart-card">
+                        <div class="sim-chart-card-header">
+                            <div>
+                                <h3>🍩 1. Where Did Your Money Go? (Cost Structure Donut)</h3>
+                                <p class="sim-description">See what took up your budget: Buying goods, Delivery fees, or Storage rent.</p>
+                            </div>
+                            <button type="button" class="btn-save-chart" data-canvas="cost-donut-chart" data-filename="cost_structure_donut.png">📥 Save PNG</button>
+                        </div>
+                        <canvas id="cost-donut-chart" role="img" aria-label="Donut chart showing operational cost structure breakdown"></canvas>
+                        <div class="sim-chart-explanation">
+                            <span class="sim-expl-icon">💡</span>
+                            <div class="sim-expl-body">
+                                <div class="sim-expl-title">Chart Explanation & Guide Lines</div>
+                                <p><strong>Colors:</strong> 🔵 Blue = Buying goods from suppliers (&gt;90% of budget), 🟠 Orange = Delivery and shipping fees, 🟢 Green = Warehouse storage rent.</p>
+                                <p><strong>Key Insight:</strong> Purchasing constitutes &gt;90% of total outlay. Reorder Point (ROP) minimizes holding cost through EOQ batch replenishment without risking shortages.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Speedometer Gauge Chart -->
+                    <div class="sim-chart-card">
+                        <div class="sim-chart-card-header">
+                            <div>
+                                <h3>⏱️ 2. How Happy Were Your Customers? (Service Level Dial)</h3>
+                                <p class="sim-description">Customer satisfaction dial (100% means zero customers were disappointed).</p>
+                            </div>
+                            <button type="button" class="btn-save-chart" data-canvas="service-gauge-chart" data-filename="service_level_gauge.png">📥 Save PNG</button>
+                        </div>
+                        <canvas id="service-gauge-chart" role="img" aria-label="Semi-circular gauge chart showing fulfillment service level percentage"></canvas>
+                        <div class="sim-chart-explanation">
+                            <span class="sim-expl-icon">💡</span>
+                            <div class="sim-expl-body">
+                                <div class="sim-expl-title">Chart Explanation & Guide Lines</div>
+                                <p><strong>Guide Line (<span class="sim-expl-tag sim-expl-tag-red">--- 95% Target Line</span>):</strong> The red tick marker denotes the executive 95% service satisfaction threshold (passing score).</p>
+                                <p><strong>Performance:</strong> Dial readings reaching or surpassing 95% indicate near-perfect order fulfillment with zero to negligible customer stockout impact.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart 3: Line & Shaded Area Chart -->
+                    <div class="sim-chart-card">
+                        <div class="sim-chart-card-header">
+                            <div>
+                                <h3>📈 3. How Full Was Your Warehouse? (Stock Level Trajectory)</h3>
+                                <p class="sim-description">Total units sitting on warehouse shelves each day (depletions vs. delivery arrivals).</p>
+                            </div>
+                            <button type="button" class="btn-save-chart" data-canvas="inventory-trajectory-chart" data-filename="inventory_trajectory_area.png">📥 Save PNG</button>
+                        </div>
+                        <canvas id="inventory-trajectory-chart" role="img" aria-label="Line and area chart showing warehouse inventory level trajectory"></canvas>
+                        <div class="sim-chart-explanation">
+                            <span class="sim-expl-icon">💡</span>
+                            <div class="sim-expl-body">
+                                <div class="sim-expl-title">Chart Explanation & Guide Lines</div>
+                                <p><strong>Guide Line (<span class="sim-expl-tag sim-expl-tag-red">--- Safety Stock Buffer Line</span>):</strong> The red dashed horizontal line is your danger line (like the low-fuel light in a car!). If stock drops below this, you are in danger of running out.</p>
+                                <p><strong>Dynamics:</strong> Downward slopes illustrate daily customer sales depletion; sharp upward spikes reflect vendor restock deliveries arriving into inventory.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart 4: Multi-Line Trend Chart -->
+                    <div class="sim-chart-card">
+                        <div class="sim-chart-card-header">
+                            <div>
+                                <h3>📉 4. How Much Cash Did You Earn Each Day? (Daily Sales Revenue)</h3>
+                                <p class="sim-description">Realized sales cash flow trajectory in Indian Rupees (₹) across simulation days.</p>
+                            </div>
+                            <button type="button" class="btn-save-chart" data-canvas="revenue-comparison-chart" data-filename="revenue_trend_line.png">📥 Save PNG</button>
+                        </div>
+                        <canvas id="revenue-comparison-chart" role="img" aria-label="Multi-line trend chart showing daily sales revenue"></canvas>
+                        <div class="sim-chart-explanation">
+                            <span class="sim-expl-icon">💡</span>
+                            <div class="sim-expl-body">
+                                <div class="sim-expl-title">Chart Explanation & Guide Lines</div>
+                                <p><strong>Guide Line (<span class="sim-expl-tag sim-expl-tag-amber">--- Avg Revenue Baseline</span>):</strong> The dotted amber line indicates your normal daily earnings baseline.</p>
+                                <p><strong>Dynamics:</strong> Curves dipping below this baseline reveal days where warehouse stockouts prevented sales and incurred estimated revenue loss.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart 5: Scatter / Bubble Matrix -->
+                    <div class="sim-chart-card">
+                        <div class="sim-chart-card-header">
+                            <div>
+                                <h3>🎯 5. Which Products Are Risky? (Product Danger Map)</h3>
+                                <p class="sim-description">Pinpoints which items take too long to arrive from suppliers or sell out too fast.</p>
+                            </div>
+                            <button type="button" class="btn-save-chart" data-canvas="sku-risk-scatter-chart" data-filename="sku_risk_scatter.png">📥 Save PNG</button>
+                        </div>
+                        <canvas id="sku-risk-scatter-chart" role="img" aria-label="Scatter plot showing SKU risk matrix"></canvas>
+                        <div class="sim-chart-explanation">
+                            <span class="sim-expl-icon">💡</span>
+                            <div class="sim-expl-body">
+                                <div class="sim-expl-title">Chart Explanation & Guide Lines</div>
+                                <p><strong>Guide Lines (<span class="sim-expl-tag sim-expl-tag-gray">--- Crosshair Lines</span>):</strong> Vertical & horizontal dashed lines indicate Average Lead Time and Average Daily Demand.</p>
+                                <p><strong>Risk Quadrants:</strong> 🟢 Green dots = Safe items. 🔴 Red dots = Items that ran out of stock! Top-right quadrant items take long to deliver and sell fast, so they need the largest safety buffers.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart 6: Grouped Bar Chart -->
+                    <div class="sim-chart-card">
+                        <div class="sim-chart-card-header">
+                            <div>
+                                <h3>📊 6. What Was Sold vs. What Was Lost (Daily Sales & Shortages)</h3>
+                                <p class="sim-description">Side-by-side comparison of units successfully sold vs. missed sales from empty shelves.</p>
+                            </div>
+                            <button type="button" class="btn-save-chart" data-canvas="sales-comparison-chart" data-filename="daily_demand_fulfillment_bars.png">📥 Save PNG</button>
+                        </div>
+                        <canvas id="sales-comparison-chart" role="img" aria-label="Grouped bar chart showing daily units sold and lost"></canvas>
+                        <div class="sim-chart-explanation">
+                            <span class="sim-expl-icon">💡</span>
+                            <div class="sim-expl-body">
+                                <div class="sim-expl-title">Chart Explanation & Guide Lines</div>
+                                <p><strong>Guide Line (<span class="sim-expl-tag sim-expl-tag-purple">--- Avg Demand Target</span>):</strong> The dotted purple line marks average daily customer demand across both policies.</p>
+                                <p><strong>Shortage Indicators:</strong> Solid bars show fulfilled sales; 🔴 red capped bars show unfulfilled lost units where stock was depleted and customers left empty-handed.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sim-chart-legend">
+                    <span><i class="legend-fixed"></i> Fixed Threshold Policy</span>
+                    <span><i class="legend-rop"></i> Reorder Point (ROP) Policy</span>
+                    <span><i class="legend-purchase"></i> Purchase Cost</span>
+                    <span><i class="legend-ordering"></i> Ordering Cost</span>
+                    <span><i class="legend-holding"></i> Holding Cost</span>
+                    <span><i class="legend-sales"></i> Fulfilled Sales</span>
+                    <span><i class="legend-lost"></i> Lost Demand / Shortage</span>
+                </div>
+            </section>
+
+            {% if ml_forecast and ml_forecast.get('summary') %}
+            <section class="sim-panel sim-ml-panel" id="ml-forecast-section">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 6px;">
+                    <div>
+                        <h2>🤖 Next Week's AI Sales Forecast (Machine Learning Future Sales & Demand Forecasting: Days 8–14)</h2>
+                        <p class="sim-description">
+                            The AI looks at how much you sold on Days 1–7, and predicts what customers will buy next week (Days 8–14) so you know when to order before shelves run empty.
+                        </p>
+                    </div>
+                    <span class="policy-tag" style="background: #ede9fe; color: #5b21b6; font-size: 12px; padding: 6px 12px; font-weight: 700;">
+                        AI Model: Ridge Regression (R² = {{ "%.1f"|format(ml_forecast.summary.r2_score * 100) }}%)
+                    </span>
+                </div>
+
+                <!-- 4 KPI Summary Cards -->
+                <div class="sim-kpis">
+                    <div class="sim-kpi green">
+                        <span>Projected 7-Day Units (Days 8–14)</span>
+                        <strong>{{ ml_forecast.summary.total_predicted_units }} u</strong>
+                    </div>
+                    <div class="sim-kpi green">
+                        <span>Projected 7-Day Revenue</span>
+                        <strong>₹{{ "{:,.2f}".format(ml_forecast.summary.total_predicted_revenue) }}</strong>
+                    </div>
+                    <div class="sim-kpi amber">
+                        <span>Model Accuracy (R² Score)</span>
+                        <strong>{{ "%.1f"|format(ml_forecast.summary.r2_score * 100) }}%</strong>
+                    </div>
+                    <div class="sim-kpi {% if ml_forecast.summary.high_risk_sku_count > 0 %}red{% else %}green{% endif %}">
+                        <span>High-Risk Stockout SKUs</span>
+                        <strong>{{ ml_forecast.summary.high_risk_sku_count }} / {{ ml_forecast.product_forecast|length }}</strong>
+                    </div>
+                </div>
+
+                <!-- Chart 7: ML Forward Sales Trajectory Chart -->
+                <div class="sim-chart-card" style="margin-top: 14px; margin-bottom: 22px;">
+                    <div class="sim-chart-card-header">
+                        <div>
+                            <h3>📈 7. Machine Learning Future Sales Trajectory (Days 8–14 with 95% Confidence Interval)</h3>
+                            <p class="sim-description">
+                                Historical units sold (Days 1–7 solid navy line) smoothly transitioning into forward predicted demand (Days 8–14 dashed purple line) enveloped by a 95% prediction confidence band.
+                            </p>
+                        </div>
+                        <button type="button" class="btn-save-chart" data-canvas="ml-forecast-chart" data-filename="ml_future_sales_forecast.png">📥 Save Forecast PNG</button>
+                    </div>
+                    <canvas id="ml-forecast-chart" style="width: 100%; height: 320px;" role="img" aria-label="Machine learning forward sales forecast line chart with confidence bounds"></canvas>
+                    <div class="sim-chart-explanation">
+                        <span class="sim-expl-icon">💡</span>
+                        <div class="sim-expl-body">
+                            <div class="sim-expl-title">ML Model Interpretation & Guide Lines</div>
+                            <p><strong>🔵 Solid Blue Line (Days 1–7):</strong> The sales that already happened in your warehouse this week.</p>
+                            <p><strong>⚪ Demarcation Line (<span class="sim-expl-tag sim-expl-tag-gray">--- Day 7/8 Boundary</span>):</strong> Vertical dividing line separating historical simulation execution from forward ML extrapolation.</p>
+                            <p><strong>🟣 Dashed Purple Line (Days 8–14):</strong> The AI's predicted sales trajectory for next week.</p>
+                            <p><strong>🟣 Confidence Band (<span class="sim-expl-tag sim-expl-tag-purple">Shaded Purple Envelope</span>):</strong> The AI's 95% safe guess range (&plusmn;1.96 standard errors). Sales are 95% likely to stay inside this purple cloud.</p>
+                            <p><strong>🟠 Baseline (<span class="sim-expl-tag sim-expl-tag-amber">--- Historical Mean: {{ ml_forecast.summary.historical_avg_daily_sales }} u/day</span>):</strong> Compares forward forecast rate ({{ ml_forecast.summary.forecast_avg_daily_sales }} u/day) against last week's daily average.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Forward Daily Forecast Table -->
+                <h3 class="ml-subheading">📅 Forward Daily Demand & Projected Revenue Breakdown</h3>
+                <div class="sim-table-wrap">
+                    <table class="sim-table">
+                        <thead>
+                            <tr>
+                                <th>Timeline Day</th>
+                                <th>Predicted Demand (Units)</th>
+                                <th>95% Prediction Interval</th>
+                                <th>Projected Daily Revenue</th>
+                                <th>Confidence Level</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in ml_forecast.daily_forecast %}
+                                <tr>
+                                    <td>Day {{ d.day }}</td>
+                                    <td><strong>{{ d.predicted_units }} units</strong></td>
+                                    <td>[{{ d.lower_bound_units }} – {{ d.upper_bound_units }} units]</td>
+                                    <td>₹{{ "{:,.2f}".format(d.predicted_revenue) }}</td>
+                                    <td><span class="policy-tag" style="background: #ede9fe; color: #5b21b6;">95%</span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- SKU Forward Depletion Risk Matrix -->
+                <h3 class="ml-subheading">🎯 Forward SKU Stockout Depletion Risk Matrix & Reorder Recommendations</h3>
+                <p class="sim-description" style="margin-bottom: 12px;">
+                    🔴 <strong>Red Badges</strong> mean the item will run out of stock next week! Look at the <strong>Projected Stockout Day</strong> and reorder before that day.
+                </p>
+                <div class="sim-table-wrap">
+                    <table class="sim-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th>Ending Stock (Day 7)</th>
+                                <th>7-Day Forecast Demand</th>
+                                <th>Projected Stock (Day 14)</th>
+                                <th>Projected Stockout Day</th>
+                                <th>Risk Assessment</th>
+                                <th>Recommended Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in ml_forecast.product_forecast %}
+                                <tr>
+                                    <td><strong>{{ p.product_name }}</strong></td>
+                                    <td>{{ p.category }}</td>
+                                    <td>{{ p.ending_stock }} units</td>
+                                    <td>{{ p.forecast_units }} units</td>
+                                    <td style="{% if p.projected_stock <= 0 %}color: #dc2626; font-weight: 700;{% endif %}">
+                                        {{ p.projected_stock }} units
+                                    </td>
+                                    <td>
+                                        {% if p.stockout_day %}
+                                            <span class="badge-danger">Day {{ p.stockout_day }}</span>
+                                        {% else %}
+                                            <span style="color: #059669; font-weight: 600;">None (Safe)</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="{{ p.risk_badge }}">{{ p.risk_label }}</span>
+                                    </td>
+                                    <td style="font-size: 12.5px; color: #334155;">{{ p.recommendation }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            {% endif %}
+
+            <section class="sim-panel" id="selected-period-summary">
+                <h2>Selected-Period Summary</h2>
+                <p class="sim-description">
+                    Sales, lost demand, revenue and service level for the selected days.
+                </p>
+                <div class="sim-table-wrap">
+                    <table class="sim-table">
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Fixed Threshold</th>
+                                <th>Reorder Point</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Units Sold</td>
+                                <td id="period-fixed-sold">—</td>
+                                <td id="period-rop-sold">—</td>
+                            </tr>
+                            <tr>
+                                <td>Lost Units</td>
+                                <td id="period-fixed-lost">—</td>
+                                <td id="period-rop-lost">—</td>
+                            </tr>
+                            <tr>
+                                <td>Revenue</td>
+                                <td id="period-fixed-revenue">—</td>
+                                <td id="period-rop-revenue">—</td>
+                            </tr>
+                            <tr>
+                                <td>Service Level</td>
+                                <td id="period-fixed-service">—</td>
+                                <td id="period-rop-service">—</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="sim-panel">
+                <h2>Report Period</h2>
+                <p class="sim-description">
+                    Select the days you want to inspect from this simulation.
+                </p>
+                <div class="sim-config">
+                    <div>
+                        <label for="report_start_day">Start Day</label>
+                        <select id="report_start_day" name="report_start_day">
+                            {% for day in range(1, fixed["duration_days"] + 1) %}
+                                <option value="{{ day }}" {% if day == 1 %}selected{% endif %}>Day {{ day }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="report_end_day">End Day</label>
+                        <select id="report_end_day" name="report_end_day">
+                            {% for day in range(1, fixed["duration_days"] + 1) %}
+                                <option value="{{ day }}" {% if day == fixed["duration_days"] %}selected{% endif %}>Day {{ day }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <p class="sim-description">
+                    The daily report and selected-period summary update when you change these days.
+                </p>
+            </section>
+
+            <section class="sim-panel">
+                <h2>Daily Sales vs. Lost Demand</h2>
+                <p class="sim-description">
+                    Green bars represent fulfilled demand; red bars represent lost demand.
+                    Each policy uses its own scale for readability.
+                </p>
+
+                {% for policy, result in results.items() %}
+                    {% set scale = namespace(max_value=1) %}
+                    {% for item in result.daily %}
+                        {% if item.units_sold > scale.max_value %}
+                            {% set scale.max_value = item.units_sold %}
+                        {% endif %}
+                        {% if item.lost_units > scale.max_value %}
+                            {% set scale.max_value = item.lost_units %}
+                        {% endif %}
+                    {% endfor %}
+
+                    <div style="margin-top: 24px;">
+                        <div class="policy-heading">
+                            <h3>{{ policy.replace('_', ' ').title() }}</h3>
+                            <span class="policy-tag">Run #{{ result['run_id'] }}</span>
+                        </div>
+
+                        <div class="sim-table-wrap">
+                            <table class="sim-table daily-table">
+                                <thead>
+                                    <tr>
+                                        <th>Day</th>
+                                        <th>Units Sold</th>
+                                        <th>Lost Units</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in result.daily %}
+                                        <tr data-revenue="{{ item.revenue|default(0) }}">
+                                            <td>Day {{ item.day }}</td>
+                                            <td>
+                                                <div class="bar-cell">
+                                                    <div class="bar-track">
+                                                        <div
+                                                            class="bar-fill bar-sales"
+                                                            style="width: {{ (item.units_sold / scale.max_value * 100)|round(1) }}%;"
+                                                        ></div>
+                                                    </div>
+                                                    <span class="bar-value">{{ item.units_sold }}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="bar-cell">
+                                                    <div class="bar-track">
+                                                        <div
+                                                            class="bar-fill bar-lost"
+                                                            style="width: {{ (item.lost_units / scale.max_value * 100)|round(1) }}%;"
+                                                        ></div>
+                                                    </div>
+                                                    <span class="bar-value">{{ item.lost_units }}</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {% endfor %}
+            </section>
+
+            {% for policy, result in results.items() %}
+                <section class="sim-panel">
+                    <div class="policy-heading">
+                        <div>
+                            <h2>{{ policy.replace('_', ' ').title() }} — Product Results</h2>
+                            <p class="sim-description">Run #{{ result['run_id'] }}</p>
+                        </div>
+                    </div>
+
+                    <div class="sim-table-wrap">
+                        <table class="sim-table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Final Stock</th>
+                                    <th>Outstanding Quantity</th>
+                                    <th>Units Sold</th>
+                                    <th>Lost Units</th>
+                                    <th>Stockout Days</th>
+                                    <th>Orders</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in result['products'] %}
+                                    <tr>
+                                        <td>{{ item['product_name'] }}</td>
+                                        <td>{{ item['final_stock'] }}</td>
+                                        <td>{{ item['outstanding_quantity'] }}</td>
+                                        <td>{{ item['units_sold'] }}</td>
+                                        <td>{{ item['lost_units'] }}</td>
+                                        <td>{{ item['stockout_days'] }}</td>
+                                        <td>{{ item['orders_placed'] }}</td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="7">No product results available.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            {% endfor %}
+        {% endif %}
+
+
+
+        {% if results %}
+        <script id="sim-data" type="application/json">{{ results|tojson }}</script>
+        {% endif %}
+        {% if ml_forecast %}
+        <script id="ml-data" type="application/json">{{ ml_forecast|tojson }}</script>
+        {% endif %}
+
+        <script>
+        (() => {
+            const startSelect = document.getElementById("report_start_day");
+            const endSelect = document.getElementById("report_end_day");
+            if (!startSelect || !endSelect) return;
+
+            const simDataEl = document.getElementById("sim-data");
+            const simData = simDataEl ? JSON.parse(simDataEl.textContent) : null;
+            const mlDataEl = document.getElementById("ml-data");
+            const mlData = mlDataEl ? JSON.parse(mlDataEl.textContent) : null;
+
+            const dailyHeading = Array.from(document.querySelectorAll("h2"))
+                .find((heading) => heading.textContent.trim() === "Daily Sales vs. Lost Demand");
+
+            const dailyPanel = dailyHeading?.closest(".sim-panel");
+            const tables = dailyPanel ? dailyPanel.querySelectorAll("table.daily-table") : [];
+            const summaryIds = [
+                ["period-fixed-sold", "period-fixed-lost", "period-fixed-revenue", "period-fixed-service"],
+                ["period-rop-sold", "period-rop-lost", "period-rop-revenue", "period-rop-service"]
+            ];
+
+            tables.forEach((table) => {
+                const footer = document.createElement("tfoot");
+                footer.innerHTML = `
+                    <tr class="period-total-row">
+                        <th>Selected Period Total</th>
+                        <th class="period-sales-total">0</th>
+                        <th class="period-lost-total">0</th>
+                    </tr>`;
+                table.appendChild(footer);
+            });
+
+            // Handle Save PNG buttons for all charts
+            document.querySelectorAll(".btn-save-chart").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const canvasId = btn.getAttribute("data-canvas");
+                    const filename = btn.getAttribute("data-filename") || "chart.png";
+                    const canvas = document.getElementById(canvasId);
+                    if (!canvas) return;
+                    const a = document.createElement("a");
+                    a.download = filename;
+                    a.href = canvas.toDataURL("image/png");
+                    a.click();
+                });
+            });
+
+            function filterDailyRows() {
+                let start = Number(startSelect.value);
+                let end = Number(endSelect.value);
+
+                if (start > end) {
+                    endSelect.value = String(start);
+                    end = start;
+                }
+
+                // Update report download URLs with start_day and end_day
+                ["download-xlsx", "download-pdf", "download-csv"].forEach((id) => {
+                    const link = document.getElementById(id);
+                    if (!link) return;
+                    const url = new URL(link.href, window.location.href);
+                    url.searchParams.set("start_day", String(start));
+                    url.searchParams.set("end_day", String(end));
+                    link.href = url.toString();
+                });
+
+                tables.forEach((table, index) => {
+                    let salesTotal = 0;
+                    let lostTotal = 0;
+                    let revenueTotal = 0;
+
+                    table.querySelectorAll("tbody tr").forEach((row) => {
+                        const match = row.cells[0]?.textContent.match(/Day\s+(\d+)/);
+                        if (!match) return;
+
+                        const day = Number(match[1]);
+                        const included = day >= start && day <= end;
+                        row.hidden = !included;
+
+                        if (included) {
+                            const values = row.querySelectorAll(".bar-value");
+                            salesTotal += Number(values[0]?.textContent || 0);
+                            lostTotal += Number(values[1]?.textContent || 0);
+                            revenueTotal += Number(row.dataset.revenue || 0);
+                        }
+                    });
+
+                    const ids = summaryIds[index];
+                    if (ids) {
+                        const setText = (id, value) => {
+                            const element = document.getElementById(id);
+                            if (element) element.textContent = value;
+                        };
+                        setText(ids[0], salesTotal);
+                        setText(ids[1], lostTotal);
+                        setText(ids[2], "₹" + revenueTotal.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        }));
+                        const totalDemand = salesTotal + lostTotal;
+                        setText(ids[3], (totalDemand ? salesTotal / totalDemand * 100 : 0).toFixed(2) + "%");
+                    }
+
+                    const salesCell = table.querySelector(".period-sales-total");
+                    const lostCell = table.querySelector(".period-lost-total");
+                    if (salesCell) salesCell.textContent = salesTotal;
+                    if (lostCell) lostCell.textContent = lostTotal;
+                });
+            }
+
+            function setupCanvas(canvasId, height = 270) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return null;
+                const rect = canvas.getBoundingClientRect();
+                const width = Math.max(280, Math.floor(rect.width || 540));
+                const ratio = window.devicePixelRatio || 1;
+                canvas.width = width * ratio;
+                canvas.height = height * ratio;
+                const ctx = canvas.getContext("2d");
+                ctx.scale(ratio, ratio);
+                ctx.clearRect(0, 0, width, height);
+                return { ctx, width, height };
+            }
+
+            // 1. Donut / Ring Chart: Operational Cost Structure
+            function drawCostDonutChart() {
+                const c = setupCanvas("cost-donut-chart", 270);
+                if (!c || !simData) return;
+                const { ctx, width, height } = c;
+
+                const fs = simData.fixed_threshold?.summary || {};
+                const rs = simData.reorder_point?.summary || {};
+
+                const policies = [
+                    {
+                        name: "Fixed Threshold",
+                        cx: width * 0.28,
+                        cy: height * 0.44,
+                        costs: [
+                            { label: "Purchase", val: fs.total_purchase_cost || 0, color: "#1e3a8a" },
+                            { label: "Ordering", val: fs.total_ordering_cost || 0, color: "#d97706" },
+                            { label: "Holding", val: fs.total_holding_cost || 0, color: "#059669" }
+                        ]
+                    },
+                    {
+                        name: "Reorder Point (ROP)",
+                        cx: width * 0.72,
+                        cy: height * 0.44,
+                        costs: [
+                            { label: "Purchase", val: rs.total_purchase_cost || 0, color: "#1e3a8a" },
+                            { label: "Ordering", val: rs.total_ordering_cost || 0, color: "#d97706" },
+                            { label: "Holding", val: rs.total_holding_cost || 0, color: "#059669" }
+                        ]
+                    }
+                ];
+
+                const outerR = Math.min(width * 0.17, 70);
+                const innerR = outerR * 0.52;
+
+                policies.forEach((p) => {
+                    const total = p.costs.reduce((sum, item) => sum + item.val, 0) || 1;
+                    let currentAngle = -Math.PI / 2;
+
+                    p.costs.forEach((slice) => {
+                        const sliceAngle = (slice.val / total) * (Math.PI * 2);
+                        const endAngle = currentAngle + sliceAngle;
+
+                        ctx.beginPath();
+                        ctx.arc(p.cx, p.cy, outerR, currentAngle, endAngle, false);
+                        ctx.arc(p.cx, p.cy, innerR, endAngle, currentAngle, true);
+                        ctx.closePath();
+                        ctx.fillStyle = slice.color;
+                        ctx.fill();
+                        ctx.strokeStyle = "#ffffff";
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+
+                        currentAngle = endAngle;
+                    });
+
+                    // Policy Title above donut
+                    ctx.fillStyle = "#0f172a";
+                    ctx.font = "bold 12px sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.fillText(p.name, p.cx, p.cy - outerR - 10);
+
+                    // Center cutout text
+                    ctx.fillStyle = "#1e293b";
+                    ctx.font = "bold 10px sans-serif";
+                    ctx.fillText("Total", p.cx, p.cy - 5);
+                    ctx.fillStyle = "#475569";
+                    ctx.font = "bold 9.5px sans-serif";
+                    ctx.fillText("₹" + Math.round(total).toLocaleString("en-IN"), p.cx, p.cy + 10);
+                });
+
+                // Legend above bottom note
+                const legendItems = [
+                    { label: "Purchase Cost", color: "#1e3a8a" },
+                    { label: "Ordering Cost", color: "#d97706" },
+                    { label: "Holding Cost", color: "#059669" }
+                ];
+                let lx = width / 2 - 130;
+                legendItems.forEach((item) => {
+                    ctx.fillStyle = item.color;
+                    ctx.fillRect(lx, height - 30, 10, 10);
+                    ctx.fillStyle = "#475569";
+                    ctx.font = "11px sans-serif";
+                    ctx.textAlign = "left";
+                    ctx.fillText(item.label, lx + 14, height - 21);
+                    lx += 95;
+                });
+
+                // Explanatory note line
+                ctx.fillStyle = "#64748b";
+                ctx.font = "italic 9.5px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("Line Note: Purchasing (>90%) dominates outlay; ROP optimizes batch ordering frequency to reduce holding costs.", width / 2, height - 6);
+            }
+
+            // 2. Speedometer Gauge Chart: Service Level Performance
+            function drawServiceGaugeChart() {
+                const c = setupCanvas("service-gauge-chart", 270);
+                if (!c || !simData) return;
+                const { ctx, width, height } = c;
+
+                const fs = simData.fixed_threshold?.summary || {};
+                const rs = simData.reorder_point?.summary || {};
+
+                const fSL = (fs.service_level || 1.0) * 100;
+                const rSL = (rs.service_level || 1.0) * 100;
+
+                const gauges = [
+                    { name: "Fixed Threshold", pct: fSL, color: "#1e3a8a", cx: width * 0.28, cy: height * 0.65 },
+                    { name: "Reorder Point (ROP)", pct: rSL, color: "#0d9488", cx: width * 0.72, cy: height * 0.65 }
+                ];
+
+                const radius = Math.min(width * 0.19, 74);
+
+                gauges.forEach((g) => {
+                    // Background track (180 degree arc)
+                    ctx.beginPath();
+                    ctx.arc(g.cx, g.cy, radius, Math.PI, 0, false);
+                    ctx.strokeStyle = "#e2e8f0";
+                    ctx.lineWidth = 16;
+                    ctx.lineCap = "round";
+                    ctx.stroke();
+
+                    // Progress arc
+                    const progressAngle = Math.PI + (Math.min(100, Math.max(0, g.pct)) / 100) * Math.PI;
+                    ctx.beginPath();
+                    ctx.arc(g.cx, g.cy, radius, Math.PI, progressAngle, false);
+                    ctx.strokeStyle = g.color;
+                    ctx.lineWidth = 16;
+                    ctx.lineCap = "round";
+                    ctx.stroke();
+
+                    // 95% Target Line marker on gauge
+                    const tTarget = Math.PI + 0.95 * Math.PI;
+                    const rIn = radius - 11;
+                    const rOut = radius + 11;
+                    ctx.beginPath();
+                    ctx.moveTo(g.cx + rIn * Math.cos(tTarget), g.cy + rIn * Math.sin(tTarget));
+                    ctx.lineTo(g.cx + rOut * Math.cos(tTarget), g.cy + rOut * Math.sin(tTarget));
+                    ctx.strokeStyle = "#dc2626";
+                    ctx.lineWidth = 3.0;
+                    ctx.stroke();
+
+                    // 95% Target Line label
+                    ctx.fillStyle = "#dc2626";
+                    ctx.font = "bold 8.5px sans-serif";
+                    ctx.textAlign = "left";
+                    ctx.fillText("--- 95% Target Line", g.cx + (radius + 14) * Math.cos(tTarget), g.cy + (radius + 14) * Math.sin(tTarget) - 2);
+
+                    // Title above gauge
+                    ctx.fillStyle = "#0f172a";
+                    ctx.font = "bold 12px sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.fillText(g.name, g.cx, g.cy - radius - 16);
+
+                    // Large percentage readout in center
+                    ctx.fillStyle = "#0f172a";
+                    ctx.font = "bold 21px sans-serif";
+                    ctx.fillText(g.pct.toFixed(1) + "%", g.cx, g.cy - 10);
+
+                    // Status label
+                    const status = g.pct >= 98 ? "Optimal Fill Rate" : (g.pct >= 90 ? "Minor Shortages" : "Stockout Impact");
+                    ctx.fillStyle = g.pct >= 98 ? "#059669" : (g.pct >= 90 ? "#d97706" : "#dc2626");
+                    ctx.font = "bold 10px sans-serif";
+                    ctx.fillText(status, g.cx, g.cy + 12);
+                });
+
+                // Explanatory note line
+                ctx.fillStyle = "#64748b";
+                ctx.font = "italic 9.5px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("Line Note: The red tick marks the 95% Target Line. Levels above prevent customer stockouts.", width / 2, height - 6);
+            }
+
+            // 3. Line & Shaded Area Chart: Warehouse Inventory Trajectory
+            function drawInventoryTrajectoryChart(start, end) {
+                const c = setupCanvas("inventory-trajectory-chart", 270);
+                if (!c || !simData) return;
+                const { ctx, width, height } = c;
+
+                const fItems = simData.fixed_threshold?.daily_items || [];
+                const rItems = simData.reorder_point?.daily_items || [];
+
+                const days = [];
+                for (let d = start; d <= end; d++) days.push(d);
+                if (!days.length) return;
+
+                const fStock = days.map(d => fItems.filter(i => i.day === d).reduce((sum, i) => sum + (i.closing_stock || 0), 0));
+                const rStock = days.map(d => rItems.filter(i => i.day === d).reduce((sum, i) => sum + (i.closing_stock || 0), 0));
+
+                const maxVal = Math.max(1, ...fStock, ...rStock);
+                const left = 55, right = 20, top = 25, bottom = 42;
+                const plotW = width - left - right, plotH = height - top - bottom;
+
+                // Grid lines & Y-ticks
+                ctx.font = "11px sans-serif";
+                ctx.fillStyle = "#64748b";
+                ctx.strokeStyle = "#e2e8f0";
+                ctx.lineWidth = 1;
+                for (let i = 0; i <= 4; i++) {
+                    const y = top + plotH - (plotH * i / 4);
+                    const val = Math.round(maxVal * i / 4);
+                    ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(width - right, y); ctx.stroke();
+                    ctx.textAlign = "right"; ctx.fillText(val + " u", left - 8, y + 4);
+                }
+
+                // Safety Stock Buffer reference line
+                const minObserved = Math.min(...fStock, ...rStock);
+                const safetyBuffer = Math.max(15, Math.round(minObserved * 0.75));
+                const ySafety = top + plotH - (safetyBuffer / maxVal) * plotH;
+
+                ctx.save();
+                ctx.setLineDash([5, 4]);
+                ctx.strokeStyle = "#dc2626";
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.moveTo(left, ySafety);
+                ctx.lineTo(width - right, ySafety);
+                ctx.stroke();
+                ctx.restore();
+
+                ctx.fillStyle = "#dc2626";
+                ctx.font = "bold 9px sans-serif";
+                ctx.textAlign = "right";
+                ctx.fillText(`--- Safety Buffer Line: ~${safetyBuffer} u`, width - right - 6, ySafety - 5);
+
+                const stepX = days.length > 1 ? plotW / (days.length - 1) : plotW;
+
+                // 1. Shaded area under Fixed
+                ctx.beginPath();
+                fStock.forEach((val, idx) => {
+                    const x = left + idx * stepX;
+                    const y = top + plotH - (val / maxVal) * plotH;
+                    if (idx === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                });
+                ctx.lineTo(left + (days.length - 1) * stepX, top + plotH);
+                ctx.lineTo(left, top + plotH);
+                ctx.closePath();
+                ctx.fillStyle = "rgba(30, 58, 138, 0.12)";
+                ctx.fill();
+
+                // 2. Fixed Line & dots
+                ctx.strokeStyle = "#1e3a8a";
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                fStock.forEach((val, idx) => {
+                    const x = left + idx * stepX;
+                    const y = top + plotH - (val / maxVal) * plotH;
+                    if (idx === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+
+                fStock.forEach((val, idx) => {
+                    const x = left + idx * stepX;
+                    const y = top + plotH - (val / maxVal) * plotH;
+                    ctx.fillStyle = "#1e3a8a";
+                    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = "#475569";
+                    ctx.textAlign = "center";
+                    ctx.fillText("Day " + days[idx], x, height - 20);
+                });
+
+                // 3. Shaded area under ROP
+                ctx.beginPath();
+                rStock.forEach((val, idx) => {
+                    const x = left + idx * stepX;
+                    const y = top + plotH - (val / maxVal) * plotH;
+                    if (idx === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                });
+                ctx.lineTo(left + (days.length - 1) * stepX, top + plotH);
+                ctx.lineTo(left, top + plotH);
+                ctx.closePath();
+                ctx.fillStyle = "rgba(13, 148, 136, 0.12)";
+                ctx.fill();
+
+                // 4. ROP Line & markers
+                ctx.strokeStyle = "#0d9488";
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([5, 4]);
+                ctx.beginPath();
+                rStock.forEach((val, idx) => {
+                    const x = left + idx * stepX;
+                    const y = top + plotH - (val / maxVal) * plotH;
+                    if (idx === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                rStock.forEach((val, idx) => {
+                    const x = left + idx * stepX;
+                    const y = top + plotH - (val / maxVal) * plotH;
+                    ctx.fillStyle = "#0d9488";
+                    ctx.fillRect(x - 3.5, y - 3.5, 7, 7);
+                });
+
+                // Explanatory note line
+                ctx.fillStyle = "#64748b";
+                ctx.font = "italic 9.5px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("Line Note: The red dashed line marks Safety Stock Buffer. Upward spikes show delivery replenishments.", width / 2, height - 5);
+            }
+
+            // 4. Multi-Line Trend Chart: Daily Revenue Trajectory
+            function drawDailyRevenueChart(start, end) {
+                const c = setupCanvas("revenue-comparison-chart", 270);
+                if (!c || !simData) return;
+                const { ctx, width, height } = c;
+
+                const fDaily = (simData.fixed_threshold?.daily || []).filter(d => d.day >= start && d.day <= end);
+                const rDaily = (simData.reorder_point?.daily || []).filter(d => d.day >= start && d.day <= end);
+                if (!fDaily.length) return;
+
+                const allValues = [...fDaily.map(d => d.revenue || 0), ...rDaily.map(d => d.revenue || 0)];
+                const maxVal = Math.max(1, ...allValues);
+
+                const left = 65, right = 15, top = 25, bottom = 42;
+                const plotW = width - left - right, plotH = height - top - bottom;
+
+                ctx.font = "11px sans-serif";
+                ctx.fillStyle = "#64748b";
+                ctx.strokeStyle = "#e2e8f0";
+                ctx.lineWidth = 1;
+                for (let i = 0; i <= 4; i++) {
+                    const y = top + plotH - (plotH * i / 4);
+                    const val = Math.round(maxVal * i / 4);
+                    ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(width - right, y); ctx.stroke();
+                    ctx.textAlign = "right"; ctx.fillText("₹" + val.toLocaleString("en-IN"), left - 8, y + 4);
+                }
+
+                // Reference Line: Average Daily Revenue Baseline Line
+                const avgRev = allValues.reduce((a, b) => a + b, 0) / (allValues.length || 1);
+                const yAvg = top + plotH - (avgRev / maxVal) * plotH;
+
+                ctx.save();
+                ctx.setLineDash([3, 3]);
+                ctx.strokeStyle = "#d97706";
+                ctx.lineWidth = 2.0;
+                ctx.beginPath();
+                ctx.moveTo(left, yAvg);
+                ctx.lineTo(width - right, yAvg);
+                ctx.stroke();
+                ctx.restore();
+
+                ctx.fillStyle = "#d97706";
+                ctx.font = "bold 9px sans-serif";
+                ctx.textAlign = "right";
+                ctx.fillText(`--- Avg Revenue Baseline: ₹${Math.round(avgRev).toLocaleString("en-IN")}`, width - right - 6, yAvg - 5);
+
+                const stepX = fDaily.length > 1 ? plotW / (fDaily.length - 1) : plotW;
+
+                // Fixed line
+                ctx.strokeStyle = "#1e3a8a";
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                fDaily.forEach((item, idx) => {
+                    const x = left + idx * stepX;
+                    const y = top + plotH - ((item.revenue || 0) / maxVal) * plotH;
+                    if (idx === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+
+                fDaily.forEach((item, idx) => {
+                    const x = left + idx * stepX;
+                    const y = top + plotH - ((item.revenue || 0) / maxVal) * plotH;
+                    ctx.fillStyle = "#1e3a8a";
+                    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = "#475569";
+                    ctx.textAlign = "center";
+                    ctx.fillText("Day " + item.day, x, height - 20);
+                });
+
+                // ROP line
+                ctx.strokeStyle = "#0d9488";
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([5, 4]);
+                ctx.beginPath();
+                rDaily.forEach((item, idx) => {
+                    const x = left + idx * stepX;
+                    const y = top + plotH - ((item.revenue || 0) / maxVal) * plotH;
+                    if (idx === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                rDaily.forEach((item, idx) => {
+                    const x = left + idx * stepX;
+                    const y = top + plotH - ((item.revenue || 0) / maxVal) * plotH;
+                    ctx.fillStyle = "#0d9488";
+                    ctx.fillRect(x - 3.5, y - 3.5, 7, 7);
+                });
+
+                // Explanatory note line
+                ctx.fillStyle = "#64748b";
+                ctx.font = "italic 9.5px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("Line Note: The dotted amber line is Average Daily Revenue Baseline. Trajectory dips reflect lost sales.", width / 2, height - 5);
+            }
+
+            // 5. Scatter / Bubble Matrix: SKU Volatility vs Lead Time
+            function drawSkuRiskScatterChart() {
+                const c = setupCanvas("sku-risk-scatter-chart", 270);
+                if (!c || !simData) return;
+                const { ctx, width, height } = c;
+
+                const fProds = simData.fixed_threshold?.products || [];
+                if (!fProds.length) return;
+
+                const left = 48, right = 24, top = 25, bottom = 42;
+                const plotW = width - left - right, plotH = height - top - bottom;
+
+                // Approximate or known lead times & demand
+                const minLt = 1, maxLt = 7;
+                const minDm = 0, maxDm = 50;
+
+                // Grid
+                ctx.strokeStyle = "#e2e8f0";
+                ctx.lineWidth = 1;
+                ctx.font = "10px sans-serif";
+                ctx.fillStyle = "#64748b";
+
+                for (let lt = 2; lt <= 6; lt += 2) {
+                    const x = left + ((lt - minLt) / (maxLt - minLt)) * plotW;
+                    ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, top + plotH); ctx.stroke();
+                    ctx.textAlign = "center"; ctx.fillText(lt + " d", x, height - 20);
+                }
+                for (let dm = 10; dm <= 40; dm += 10) {
+                    const y = top + plotH - ((dm - minDm) / (maxDm - minDm)) * plotH;
+                    ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(width - right, y); ctx.stroke();
+                    ctx.textAlign = "right"; ctx.fillText(dm + " u", left - 6, y + 4);
+                }
+
+                // Compute SKU data and averages for crosshairs
+                const pData = fProds.map((p, idx) => {
+                    const lt = ((idx * 3 + 2) % 5) + 2;
+                    const dm = Math.max(5, (p.units_sold || 30) / 7 * (0.8 + (idx % 4) * 0.2));
+                    return { lt, dm, p };
+                });
+                const avgLt = pData.reduce((s, x) => s + x.lt, 0) / (pData.length || 1);
+                const avgDm = pData.reduce((s, x) => s + x.dm, 0) / (pData.length || 1);
+
+                const midX = left + ((avgLt - minLt) / (maxLt - minLt)) * plotW;
+                const midY = top + plotH - ((avgDm - minDm) / (maxDm - minDm)) * plotH;
+
+                // Quadrant divider crosshair lines
+                ctx.save();
+                ctx.strokeStyle = "#94a3b8";
+                ctx.lineWidth = 1.6;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(midX, top); ctx.lineTo(midX, top + plotH);
+                ctx.moveTo(left, midY); ctx.lineTo(width - right, midY);
+                ctx.stroke();
+                ctx.restore();
+
+                // Crosshair labels
+                ctx.fillStyle = "#64748b";
+                ctx.font = "bold 8.5px sans-serif";
+                ctx.textAlign = "left";
+                ctx.fillText(`--- Avg LT Line (${avgLt.toFixed(1)}d)`, midX + 4, top + 12);
+                ctx.textAlign = "right";
+                ctx.fillText(`--- Avg Demand Line (${Math.round(avgDm)}u)`, width - right - 4, midY - 4);
+
+                // Quadrant labels
+                ctx.font = "bold 9px sans-serif";
+                ctx.fillStyle = "#dc2626";
+                ctx.textAlign = "right";
+                ctx.fillText("High Risk Zone ⚠", width - right - 6, top + 26);
+                ctx.fillStyle = "#059669";
+                ctx.textAlign = "left";
+                ctx.fillText("Safe Buffer Zone ✓", left + 8, top + plotH - 8);
+
+                // Plot SKU bubbles
+                pData.forEach((item) => {
+                    const { lt, dm, p } = item;
+                    const lost = p.lost_units || 0;
+
+                    const px = left + ((lt - minLt) / (maxLt - minLt)) * plotW;
+                    const py = top + plotH - ((dm - minDm) / (maxDm - minDm)) * plotH;
+
+                    ctx.beginPath();
+                    ctx.arc(px, py, 6, 0, Math.PI * 2);
+                    ctx.fillStyle = lost > 0 ? "#ef4444" : "#0d9488";
+                    ctx.fill();
+                    ctx.strokeStyle = "#0f172a";
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    const shortName = (p.product_name || "Item").length > 12 ? (p.product_name.slice(0, 11) + "…") : p.product_name;
+                    ctx.fillStyle = "#1e293b";
+                    ctx.font = "bold 9px sans-serif";
+                    ctx.textAlign = "left";
+                    ctx.fillText(shortName, px + 8, py + 3);
+                });
+
+                // Explanatory note line
+                ctx.fillStyle = "#64748b";
+                ctx.font = "italic 9.5px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("Line Note: Crosshair lines divide 4 risk quadrants. Top-right items require largest safety buffers.", width / 2, height - 5);
+            }
+
+            // 6. Grouped Bar Chart: Daily Demand Fulfillment
+            function drawDailyFulfillmentChart(start, end) {
+                const c = setupCanvas("sales-comparison-chart", 270);
+                if (!c || !simData) return;
+                const { ctx, width, height } = c;
+
+                const fDaily = (simData.fixed_threshold?.daily || []).filter(d => d.day >= start && d.day <= end);
+                const rDaily = (simData.reorder_point?.daily || []).filter(d => d.day >= start && d.day <= end);
+                if (!fDaily.length) return;
+
+                const allValues = [
+                    ...fDaily.map(d => d.units_sold),
+                    ...rDaily.map(d => d.units_sold),
+                    ...fDaily.map(d => d.lost_units),
+                    ...rDaily.map(d => d.lost_units)
+                ];
+                const maxVal = Math.max(1, ...allValues);
+
+                const left = 45, right = 15, top = 25, bottom = 42;
+                const plotW = width - left - right, plotH = height - top - bottom;
+
+                ctx.font = "11px sans-serif";
+                ctx.fillStyle = "#64748b";
+                ctx.strokeStyle = "#e2e8f0";
+                ctx.lineWidth = 1;
+                for (let i = 0; i <= 4; i++) {
+                    const y = top + plotH - (plotH * i / 4);
+                    const val = Math.round(maxVal * i / 4);
+                    ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(width - right, y); ctx.stroke();
+                    ctx.textAlign = "right"; ctx.fillText(val, left - 8, y + 4);
+                }
+
+                // Reference Line: Average Daily Demand Line
+                const totalDailyDemands = fDaily.map((item, idx) => (item.units_sold || 0) + (item.lost_units || 0));
+                const avgDemand = totalDailyDemands.reduce((a, b) => a + b, 0) / (totalDailyDemands.length || 1);
+                const yAvgD = top + plotH - (avgDemand / maxVal) * plotH;
+
+                ctx.save();
+                ctx.setLineDash([3, 3]);
+                ctx.strokeStyle = "#6366f1";
+                ctx.lineWidth = 2.0;
+                ctx.beginPath();
+                ctx.moveTo(left, yAvgD);
+                ctx.lineTo(width - right, yAvgD);
+                ctx.stroke();
+                ctx.restore();
+
+                ctx.fillStyle = "#6366f1";
+                ctx.font = "bold 9px sans-serif";
+                ctx.textAlign = "right";
+                ctx.fillText(`--- Avg Demand Target Line (~${Math.round(avgDemand)} u)`, width - right - 6, yAvgD - 5);
+
+                const groupW = plotW / fDaily.length;
+                const barW = Math.min(22, groupW * 0.28);
+
+                fDaily.forEach((item, idx) => {
+                    const center = left + groupW * (idx + 0.5);
+                    const fSold = item.units_sold || 0;
+                    const rSold = rDaily[idx]?.units_sold || 0;
+                    const fLost = item.lost_units || 0;
+                    const rLost = rDaily[idx]?.lost_units || 0;
+
+                    const fSH = (fSold / maxVal) * plotH;
+                    const rSH = (rSold / maxVal) * plotH;
+
+                    // Fixed Sold
+                    ctx.fillStyle = "#1e3a8a";
+                    ctx.fillRect(center - barW - 2, top + plotH - fSH, barW, fSH);
+
+                    // ROP Sold
+                    ctx.fillStyle = "#0d9488";
+                    ctx.fillRect(center + 2, top + plotH - rSH, barW, rSH);
+
+                    // If lost units occurred, draw red cap on bar
+                    if (fLost > 0) {
+                        const fLH = (fLost / maxVal) * plotH;
+                        ctx.fillStyle = "#ef4444";
+                        ctx.fillRect(center - barW - 2, top + plotH - fSH - fLH, barW, fLH);
+                    }
+                    if (rLost > 0) {
+                        const rLH = (rLost / maxVal) * plotH;
+                        ctx.fillStyle = "#ef4444";
+                        ctx.fillRect(center + 2, top + plotH - rSH - rLH, barW, rLH);
+                    }
+
+                    ctx.fillStyle = "#475569";
+                    ctx.textAlign = "center";
+                    ctx.fillText("Day " + item.day, center, height - 20);
+                });
+
+                // Explanatory note line
+                ctx.fillStyle = "#64748b";
+                ctx.font = "italic 9.5px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("Line Note: Dotted purple line is Average Demand Target. Red hatched caps mark lost demand.", width / 2, height - 5);
+            }
+
+            // 7. Machine Learning Future Sales Trajectory (Days 8–14 with 95% Confidence Interval)
+            function drawMlForecastChart() {
+                const c = setupCanvas("ml-forecast-chart", 320);
+                if (!c || !mlData || !mlData.daily_forecast || !mlData.daily_forecast.length) return;
+                const { ctx, width, height } = c;
+
+                const hist = mlData.historical_daily || [];
+                const future = mlData.daily_forecast || [];
+                const summary = mlData.summary || {};
+
+                const allDays = [...hist.map(d => d.day), ...future.map(d => d.day)];
+                const histUnits = hist.map(d => d.units_sold || 0);
+                const futureUnits = future.map(d => d.predicted_units || 0);
+                const upperUnits = future.map(d => d.upper_bound_units || 0);
+
+                const maxVal = Math.max(1, ...histUnits, ...futureUnits, ...upperUnits) * 1.15;
+                const left = 55, right = 20, top = 32, bottom = 45;
+                const plotW = width - left - right, plotH = height - top - bottom;
+
+                // Grid lines & Y-ticks
+                ctx.font = "11px sans-serif";
+                ctx.fillStyle = "#64748b";
+                ctx.strokeStyle = "#e2e8f0";
+                ctx.lineWidth = 1;
+                for (let i = 0; i <= 4; i++) {
+                    const y = top + plotH - (plotH * i / 4);
+                    const val = Math.round(maxVal * i / 4);
+                    ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(width - right, y); ctx.stroke();
+                    ctx.textAlign = "right"; ctx.fillText(val + " u", left - 8, y + 4);
+                }
+
+                const totalDaysCount = allDays.length;
+                const getX = (dayNum) => {
+                    const idx = dayNum - 1;
+                    return left + (idx / (totalDaysCount - 1)) * plotW;
+                };
+                const getY = (val) => top + plotH - (val / maxVal) * plotH;
+
+                // Vertical boundary line at Day 7 (demarcation between simulation history and ML extrapolation)
+                const splitX = getX(7);
+                ctx.save();
+                ctx.setLineDash([4, 4]);
+                ctx.strokeStyle = "#94a3b8";
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.moveTo(splitX, top);
+                ctx.lineTo(splitX, top + plotH);
+                ctx.stroke();
+                ctx.restore();
+
+                ctx.fillStyle = "#475569";
+                ctx.font = "bold 9px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("⮜ Historical Sim | ML Forecast ➔", splitX, top - 12);
+
+                // Baseline: Historical Daily Average Sales
+                const avgHist = summary.historical_avg_daily_sales || (histUnits.reduce((a, b) => a + b, 0) / (histUnits.length || 1));
+                const yAvg = getY(avgHist);
+                ctx.save();
+                ctx.setLineDash([3, 3]);
+                ctx.strokeStyle = "#d97706";
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.moveTo(left, yAvg);
+                ctx.lineTo(width - right, yAvg);
+                ctx.stroke();
+                ctx.restore();
+
+                ctx.fillStyle = "#d97706";
+                ctx.font = "bold 8.5px sans-serif";
+                ctx.textAlign = "right";
+                ctx.fillText(`--- Hist Mean (${avgHist.toFixed(1)} u/d)`, width - right - 6, yAvg - 5);
+
+                // 95% Confidence Interval band (shaded area between lower and upper)
+                const lastHistDay = hist[hist.length - 1];
+                const lastHistVal = lastHistDay ? (lastHistDay.units_sold || 0) : futureUnits[0];
+
+                ctx.beginPath();
+                ctx.moveTo(getX(7), getY(lastHistVal));
+                future.forEach(f => {
+                    ctx.lineTo(getX(f.day), getY(f.upper_bound_units));
+                });
+                for (let i = future.length - 1; i >= 0; i--) {
+                    const f = future[i];
+                    ctx.lineTo(getX(f.day), getY(f.lower_bound_units));
+                }
+                ctx.closePath();
+                ctx.fillStyle = "rgba(124, 58, 237, 0.14)";
+                ctx.fill();
+
+                // Upper and lower boundary contour lines
+                ctx.save();
+                ctx.setLineDash([2, 2]);
+                ctx.strokeStyle = "#a78bfa";
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.moveTo(getX(7), getY(lastHistVal));
+                future.forEach(f => ctx.lineTo(getX(f.day), getY(f.upper_bound_units)));
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(getX(7), getY(lastHistVal));
+                future.forEach(f => ctx.lineTo(getX(f.day), getY(f.lower_bound_units)));
+                ctx.stroke();
+                ctx.restore();
+
+                // Historical Line (Days 1 to 7)
+                ctx.strokeStyle = "#1e3a8a";
+                ctx.lineWidth = 2.6;
+                ctx.beginPath();
+                hist.forEach((h, idx) => {
+                    const x = getX(h.day);
+                    const y = getY(h.units_sold || 0);
+                    if (idx === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+
+                hist.forEach(h => {
+                    const x = getX(h.day);
+                    const y = getY(h.units_sold || 0);
+                    ctx.fillStyle = "#1e3a8a";
+                    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+                });
+
+                // Future Forecast Line (Days 8 to 14)
+                ctx.strokeStyle = "#7c3aed";
+                ctx.lineWidth = 2.6;
+                ctx.setLineDash([5, 4]);
+                ctx.beginPath();
+                ctx.moveTo(getX(7), getY(lastHistVal));
+                future.forEach(f => {
+                    ctx.lineTo(getX(f.day), getY(f.predicted_units));
+                });
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                future.forEach(f => {
+                    const x = getX(f.day);
+                    const y = getY(f.predicted_units);
+                    ctx.fillStyle = "#7c3aed";
+                    ctx.beginPath(); ctx.arc(x, y, 4.5, 0, Math.PI * 2); ctx.fill();
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                });
+
+                // X-axis day labels
+                ctx.fillStyle = "#475569";
+                ctx.font = "10px sans-serif";
+                ctx.textAlign = "center";
+                allDays.forEach(day => {
+                    const x = getX(day);
+                    ctx.fillText("Day " + day, x, height - 20);
+                });
+
+                // Legend at Top Left
+                const legendItems = [
+                    { label: "Actual Sales (D1–7)", color: "#1e3a8a", dash: false },
+                    { label: "ML Forecast (D8–14)", color: "#7c3aed", dash: true },
+                    { label: "95% Prediction Band", color: "rgba(124, 58, 237, 0.35)", dash: false }
+                ];
+                let legX = left + 6;
+                legendItems.forEach(item => {
+                    if (item.dash) {
+                        ctx.strokeStyle = item.color;
+                        ctx.lineWidth = 2.5;
+                        ctx.beginPath();
+                        ctx.moveTo(legX, top - 14);
+                        ctx.lineTo(legX + 14, top - 14);
+                        ctx.stroke();
+                    } else {
+                        ctx.fillStyle = item.color;
+                        ctx.fillRect(legX, top - 19, 13, 9);
+                    }
+                    ctx.fillStyle = "#334155";
+                    ctx.font = "bold 9px sans-serif";
+                    ctx.textAlign = "left";
+                    ctx.fillText(item.label, legX + 17, top - 12);
+                    legX += ctx.measureText(item.label).width + 26;
+                });
+
+                // Explanatory note line
+                ctx.fillStyle = "#64748b";
+                ctx.font = "italic 9.5px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("Line Note: Dashed grey line marks Day 7/8 boundary. Shaded purple area is the 95% confidence interval.", width / 2, height - 5);
+            }
+
+            function redrawAllCharts() {
+                const start = Number(startSelect.value) || 1;
+                const end = Number(endSelect.value) || 7;
+
+                drawCostDonutChart();
+                drawServiceGaugeChart();
+                drawInventoryTrajectoryChart(start, end);
+                drawDailyRevenueChart(start, end);
+                drawSkuRiskScatterChart();
+                drawDailyFulfillmentChart(start, end);
+                drawMlForecastChart();
+            }
+
+            startSelect.addEventListener("change", () => {
+                filterDailyRows();
+                redrawAllCharts();
+            });
+            endSelect.addEventListener("change", () => {
+                filterDailyRows();
+                redrawAllCharts();
+            });
+
+            window.addEventListener("resize", redrawAllCharts);
+
+            filterDailyRows();
+            redrawAllCharts();
+        })();
+        </script>
+
+        <div class="sim-note">
+            <span>ℹ️</span>
+            <p>
+                <strong>Simulation disclaimer</strong><br>
+                These are simulated results based on the selected settings and model assumptions.
+                They do not update real stock or create real purchase orders, and they do not
+                establish real-world forecasting accuracy.
+            </p>
+        </div>
+    </main>
+</body>
+</html>

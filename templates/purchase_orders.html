@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Orders | Smart Warehouse</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .po-intro {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .po-intro p,
+        .panel-description {
+            color: var(--muted);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .po-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .po-stat {
+            padding: 21px;
+            background: white;
+            border: 1px solid var(--border);
+            border-top: 3px solid #4779b8;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .po-stat.pending { border-top-color: #d99a19; }
+        .po-stat.received { border-top-color: var(--green); }
+
+        .po-stat span {
+            display: block;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .po-stat strong {
+            display: block;
+            margin-top: 8px;
+            color: var(--navy);
+            font-size: 28px;
+        }
+
+        .po-layout {
+            display: grid;
+            grid-template-columns: minmax(270px, 0.75fr) minmax(0, 1.8fr);
+            gap: 22px;
+            align-items: start;
+        }
+
+        .po-panel {
+            min-width: 0;
+            padding: 24px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .po-panel h2 { margin-bottom: 4px; }
+
+        .po-form {
+            display: grid;
+            gap: 16px;
+            margin-top: 22px;
+        }
+
+        .po-form button { width: 100%; }
+
+        .form-help {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .error-message {
+            padding: 13px 15px;
+            margin-bottom: 18px;
+            background: #fff0f0;
+            border: 1px solid #fecaca;
+            border-radius: 9px;
+            color: #991b1b;
+        }
+
+        .po-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .po-table {
+            min-width: 850px;
+        }
+
+        .po-table th,
+        .po-table td {
+            padding: 13px 12px;
+            vertical-align: top;
+        }
+
+        .order-number {
+            font-weight: 750;
+            white-space: nowrap;
+        }
+
+        .order-cost {
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .order-status {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 750;
+            white-space: nowrap;
+        }
+
+        .status-pending {
+            color: #92400e;
+            background: #fef3c7;
+        }
+
+        .status-received {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .status-cancelled {
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .order-item {
+            margin-bottom: 11px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .order-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .order-item-name {
+            display: block;
+            font-weight: 650;
+            margin-bottom: 4px;
+        }
+
+        .delivery-progress {
+            height: 5px;
+            margin-top: 6px;
+            overflow: hidden;
+            background: #e2e8f0;
+            border-radius: 999px;
+        }
+
+        .delivery-progress span {
+            display: block;
+            height: 100%;
+            background: var(--green);
+        }
+
+        .receive-form {
+            display: grid;
+            gap: 8px;
+            min-width: 150px;
+            margin: 0 0 12px;
+            padding: 12px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+        }
+
+        .receive-form:last-child { margin-bottom: 0; }
+
+        .receive-form label {
+            font-size: 12px;
+        }
+
+        .receive-form input {
+            padding: 8px;
+        }
+
+        .receive-form button {
+            width: 100%;
+            padding: 8px;
+            font-size: 12px;
+        }
+
+        .complete-text {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .empty-state {
+            padding: 30px 15px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        @media (max-width: 1050px) {
+            .po-layout { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 650px) {
+            .po-stats { grid-template-columns: 1fr; }
+            .po-panel { padding: 17px; }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">📦 Smart Warehouse</div>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/products">Products</a>
+            <a href="/stock">Stock Management</a>
+            <a href="/suppliers">Suppliers</a>
+            <a href="/inventory">Inventory</a>
+            <a href="/replenishment">Replenishment</a>
+            <a href="/purchase-orders">Purchase Orders</a>
+            <a href="/simulation">Simulation</a>
+        </div>
+    </nav>
+
+    <header>
+        <h1>Purchase Order Management</h1>
+        <p>Create supplier orders and track incoming inventory deliveries.</p>
+    </header>
+
+    <main>
+        <div class="po-intro">
+            <div>
+                <h2>Purchasing Workspace</h2>
+                <p>Manage purchase orders from creation through delivery.</p>
+            </div>
+            <a class="button" href="/replenishment">Review Replenishment →</a>
+        </div>
+
+        {% if error %}
+            <div class="error-message" role="alert">
+                <strong>{{ error }}</strong>
+            </div>
+        {% endif %}
+
+        {% set ns = namespace(total=0, pending=0, received=0) %}
+        {% for order in orders %}
+            {% set ns.total = ns.total + 1 %}
+            {% if order.status == "RECEIVED" %}
+                {% set ns.received = ns.received + 1 %}
+            {% elif order.status != "CANCELLED" %}
+                {% set ns.pending = ns.pending + 1 %}
+            {% endif %}
+        {% endfor %}
+
+        <section class="po-stats">
+            <div class="po-stat">
+                <span>Total Purchase Orders</span>
+                <strong>{{ ns.total }}</strong>
+            </div>
+            <div class="po-stat pending">
+                <span>Open Orders</span>
+                <strong>{{ ns.pending }}</strong>
+            </div>
+            <div class="po-stat received">
+                <span>Received Orders</span>
+                <strong>{{ ns.received }}</strong>
+            </div>
+        </section>
+
+        <div class="po-layout">
+            <section class="po-panel">
+                <h2>＋ Create Purchase Order</h2>
+                <p class="panel-description">
+                    Enter the supplier, product, quantity and purchase cost.
+                </p>
+
+                {% if not products %}
+                    <div class="error-message" style="margin-top: 18px;">
+                        Add a product before creating a purchase order.
+                        <p style="margin-top: 8px;">
+                            <a href="/products"><strong>Manage Products →</strong></a>
+                        </p>
+                    </div>
+                {% endif %}
+
+                <form method="POST" class="po-form">
+                    <div>
+                        <label for="supplier_id">Supplier</label>
+                        <select id="supplier_id" name="supplier_id">
+                            <option value="">No supplier selected</option>
+                            {% for supplier in suppliers %}
+                                <option value="{{ supplier.id }}">
+                                    {{ supplier.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="product_id">Product</label>
+                        <select id="product_id" name="product_id" required>
+                            {% for product in products %}
+                                <option value="{{ product.id }}">
+                                    {{ product.name }}
+                                </option>
+                            {% else %}
+                                <option value="">No products available</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="quantity">Order Quantity</label>
+                        <input
+                            id="quantity"
+                            name="quantity"
+                            type="number"
+                            min="1"
+                            step="1"
+                            placeholder="e.g. 20"
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label for="unit_cost">Purchase Cost per Unit (₹)</label>
+                        <input
+                            id="unit_cost"
+                            name="unit_cost"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="e.g. 700.00"
+                            required
+                        >
+                        <span class="form-help">
+                            Enter the supplier's cost per unit.
+                        </span>
+                    </div>
+
+                    <div>
+                        <label for="expected_delivery_date">Expected Delivery Date</label>
+                        <input
+                            id="expected_delivery_date"
+                            name="expected_delivery_date"
+                            type="date"
+                        >
+                    </div>
+
+                    <button type="submit" {% if not products %}disabled{% endif %}>
+                        Create Purchase Order →
+                    </button>
+                </form>
+            </section>
+
+            <section class="po-panel">
+                <h2>Purchase Order Register</h2>
+                <p class="panel-description">
+                    Review order totals, delivery progress and remaining quantities.
+                </p>
+
+                <div class="po-table-wrap">
+                    <table class="po-table">
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Supplier</th>
+                                <th>Items & Delivery Progress</th>
+                                <th>Total Cost</th>
+                                <th>Expected Delivery</th>
+                                <th>Status</th>
+                                <th>Receive Items</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                                <tr>
+                                    <td>
+                                        <span class="order-number">#{{ order.id }}</span>
+                                    </td>
+
+                                    <td>
+                                        {{ order.supplier.name if order.supplier else "Not assigned" }}
+                                    </td>
+
+                                    <td>
+                                        {% for item in order.items %}
+                                            {% set remaining = item.quantity - item.received_quantity %}
+                                            {% set progress = (item.received_quantity / item.quantity * 100)|int if item.quantity > 0 else 0 %}
+
+                                            <div class="order-item">
+                                                <span class="order-item-name">
+                                                    {{ item.product.name }}
+                                                </span>
+                                                <span class="form-help">
+                                                    {{ item.received_quantity }} of {{ item.quantity }} received
+                                                </span>
+                                                <div
+                                                    class="delivery-progress"
+                                                    role="progressbar"
+                                                    aria-label="Delivery progress for {{ item.product.name }}"
+                                                    aria-valuemin="0"
+                                                    aria-valuemax="100"
+                                                    aria-valuenow="{{ progress }}"
+                                                >
+                                                    <span style="width: {{ progress }}%;"></span>
+                                                </div>
+                                                {% if remaining > 0 %}
+                                                    <span class="form-help">
+                                                        {{ remaining }} remaining
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        {% else %}
+                                            <span class="form-help">No items listed</span>
+                                        {% endfor %}
+                                    </td>
+
+                                    <td class="order-cost">
+                                        ₹{{ "%.2f"|format(order.total_cost) }}
+                                    </td>
+
+                                    <td>
+                                        {% if order.expected_delivery_date %}
+                                            {{ order.expected_delivery_date.strftime("%d %b %Y") }}
+                                        {% else %}
+                                            <span class="form-help">Not set</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {% if order.status == "RECEIVED" %}
+                                            <span class="order-status status-received">Received</span>
+                                        {% elif order.status == "CANCELLED" %}
+                                            <span class="order-status status-cancelled">Cancelled</span>
+                                        {% else %}
+                                            <span class="order-status status-pending">
+                                                {{ order.status|replace("_", " ")|title }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {% if order.status not in ("RECEIVED", "CANCELLED") %}
+                                            {% for item in order.items %}
+                                                {% set remaining = item.quantity - item.received_quantity %}
+                                                {% if remaining > 0 %}
+                                                    <form
+                                                        class="receive-form"
+                                                        method="POST"
+                                                        action="{{ url_for('receive_purchase_order', order_id=order.id) }}"
+                                                    >
+                                                        <input
+                                                            type="hidden"
+                                                            name="item_id"
+                                                            value="{{ item.id }}"
+                                                        >
+
+                                                        <label for="receive-{{ item.id }}">
+                                                            {{ item.product.name }}
+                                                        </label>
+
+                                                        <input
+                                                            id="receive-{{ item.id }}"
+                                                            type="number"
+                                                            name="quantity"
+                                                            min="1"
+                                                            max="{{ remaining }}"
+                                                            value="{{ remaining }}"
+                                                            required
+                                                        >
+
+                                                        <button type="submit">
+                                                            Receive Delivery
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="complete-text">No outstanding items</span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <span class="complete-text">Order closed</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="7">
+                                        <div class="empty-state">
+                                            <strong>No purchase orders yet.</strong>
+                                            <p>Create your first order using the form.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+</body>
+</html>

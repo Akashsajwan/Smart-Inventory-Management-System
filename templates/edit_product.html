@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Edit Product - Smart Warehouse</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<nav class="navbar">
+
+    <div class="nav-brand">
+        Smart Warehouse
+    </div>
+
+    <div class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/products">Products</a>
+        <a href="/stock">Stock Management</a>
+        <a href="/suppliers">Suppliers</a>
+    </div>
+
+</nav>
+
+<main>
+
+    <section class="welcome">
+
+        <h2>Edit Product</h2>
+
+        <form method="POST">
+
+            <div>
+                <label>Product Name</label>
+
+                <input
+                    type="text"
+                    name="name"
+                    value="{{ product.name }}"
+                    required
+                >
+            </div>
+
+            <div>
+                <label>Category</label>
+
+                <input
+                    type="text"
+                    name="category"
+                    value="{{ product.category }}"
+                    required
+                >
+            </div>
+
+            <div>
+                <label>Price</label>
+
+                <input
+                    type="number"
+                    name="price"
+                    step="0.01"
+                    value="{{ product.price }}"
+                    required
+                >
+            </div>
+
+            <div>
+                <label>Current Stock</label>
+
+                <input
+                    type="number"
+                    name="current_stock"
+                    min="0"
+                    value="{{ product.current_stock }}"
+                    required
+                >
+            </div>
+
+            <div>
+                <label>Reorder Level</label>
+
+                <input
+                    type="number"
+                    name="reorder_level"
+                    min="0"
+                    value="{{ product.reorder_level }}"
+                    required
+                >
+            </div>
+
+            <div>
+                <label>Supplier</label>
+
+                <select name="supplier_id" required>
+
+                    {% for supplier in suppliers %}
+
+                    <option
+                        value="{{ supplier.id }}"
+                        {% if product.supplier_id == supplier.id %}
+                        selected
+                        {% endif %}
+                    >
+                        {{ supplier.name }}
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+            <button type="submit">
+                Update Product
+            </button>
+
+        </form>
+
+    </section>
+
+</main>
+
+</body>
+</html>

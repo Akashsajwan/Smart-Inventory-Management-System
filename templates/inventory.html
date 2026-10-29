@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory | Smart Warehouse</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .inventory-intro {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .inventory-intro p,
+        .inventory-subtitle {
+            color: var(--muted);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .inventory-kpis {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .inventory-kpi {
+            background: white;
+            padding: 21px;
+            border: 1px solid var(--border);
+            border-top: 3px solid var(--green);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .inventory-kpi.warning {
+            border-top-color: #d99a19;
+        }
+
+        .inventory-kpi.danger {
+            border-top-color: #dc2626;
+        }
+
+        .inventory-kpi span {
+            display: block;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .inventory-kpi strong {
+            display: block;
+            margin-top: 8px;
+            font-size: 29px;
+            line-height: 1.2;
+            color: var(--navy);
+        }
+
+        .inventory-panel {
+            padding: 24px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .inventory-panel-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .inventory-panel-heading h2 {
+            margin: 0;
+        }
+
+        .inventory-panel-heading p {
+            color: var(--muted);
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .inventory-tools {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .inventory-tools input,
+        .inventory-tools select {
+            width: auto;
+            min-width: 190px;
+            flex: 1;
+        }
+
+        .inventory-table-wrap {
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        .inventory-table {
+            min-width: 680px;
+        }
+
+        .inventory-table td,
+        .inventory-table th {
+            padding: 14px 12px;
+        }
+
+        .inventory-product-name {
+            font-weight: 700;
+        }
+
+        .inventory-stock-number {
+            font-weight: 750;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stock-track {
+            height: 6px;
+            width: 75px;
+            margin-top: 6px;
+            background: #e2e8f0;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .stock-track span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: var(--green);
+        }
+
+        .stock-track span.low {
+            background: #d99a19;
+        }
+
+        .stock-track span.empty {
+            background: #dc2626;
+        }
+
+        .inventory-badge {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 750;
+            white-space: nowrap;
+        }
+
+        .inventory-badge.ok {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .inventory-badge.low {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .inventory-badge.out {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .inventory-empty {
+            padding: 35px 15px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .inventory-footer {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        @media (max-width: 650px) {
+            .inventory-kpis {
+                grid-template-columns: 1fr;
+            }
+
+            .inventory-panel {
+                padding: 17px;
+            }
+
+            .inventory-tools {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .inventory-tools input,
+            .inventory-tools select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">📦 Smart Warehouse</div>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/products">Products</a>
+            <a href="/stock">Stock Management</a>
+            <a href="/suppliers">Suppliers</a>
+            <a href="/inventory">Inventory</a>
+            <a href="/replenishment">Replenishment</a>
+            <a href="/purchase-orders">Purchase Orders</a>
+            <a href="/simulation">Simulation</a>
+        </div>
+    </nav>
+
+    <header>
+        <h1>Inventory Overview</h1>
+        <p>Monitor stock availability and identify products that need attention.</p>
+    </header>
+
+    <main>
+        <div class="inventory-intro">
+            <div>
+                <h2>Inventory Monitor</h2>
+                <p>Review stock levels against each product's reorder threshold.</p>
+            </div>
+            <a class="button" href="/products">＋ Manage Products</a>
+        </div>
+
+        {% set ns = namespace(total=0, low=0, out=0) %}
+        {% for product in products %}
+            {% set ns.total = ns.total + product.current_stock %}
+            {% if product.current_stock == 0 %}
+                {% set ns.out = ns.out + 1 %}
+            {% elif product.current_stock <= product.reorder_level %}
+                {% set ns.low = ns.low + 1 %}
+            {% endif %}
+        {% endfor %}
+
+        <section class="inventory-kpis">
+            <div class="inventory-kpi">
+                <span>Total Units in Stock</span>
+                <strong>{{ ns.total }}</strong>
+            </div>
+            <div class="inventory-kpi warning">
+                <span>Low-Stock Products</span>
+                <strong>{{ ns.low }}</strong>
+            </div>
+            <div class="inventory-kpi danger">
+                <span>Out-of-Stock Products</span>
+                <strong>{{ ns.out }}</strong>
+            </div>
+        </section>
+
+        <section class="inventory-panel">
+            <div class="inventory-panel-heading">
+                <div>
+                    <h2>Inventory Register</h2>
+                    <p>Search and filter your current product inventory.</p>
+                </div>
+            </div>
+
+            <div class="inventory-tools">
+                <input
+                    type="search"
+                    id="inventorySearch"
+                    placeholder="Search product, category or supplier..."
+                    aria-label="Search inventory"
+                >
+
+                <select id="inventoryStatus" aria-label="Filter by stock status">
+                    <option value="all">All stock statuses</option>
+                    <option value="ok">In Stock</option>
+                    <option value="low">Low Stock</option>
+                    <option value="out">Out of Stock</option>
+                </select>
+            </div>
+
+            <div class="inventory-table-wrap">
+                <table class="inventory-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Supplier</th>
+                            <th>Current Stock</th>
+                            <th>Reorder Level</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="inventoryRows">
+                        {% for product in products %}
+                            {% if product.current_stock == 0 %}
+                                {% set status = "out" %}
+                                {% set status_label = "Out of Stock" %}
+                            {% elif product.current_stock <= product.reorder_level %}
+                                {% set status = "low" %}
+                                {% set status_label = "Low Stock" %}
+                            {% else %}
+                                {% set status = "ok" %}
+                                {% set status_label = "In Stock" %}
+                            {% endif %}
+
+                            <tr
+                                data-status="{{ status }}"
+                                data-search="{{ (product.name ~ ' ' ~ product.category ~ ' ' ~ product.supplier.name)|lower }}"
+                            >
+                                <td class="inventory-product-name">{{ product.name }}</td>
+                                <td>{{ product.category }}</td>
+                                <td>{{ product.supplier.name }}</td>
+                                <td>
+                                    <span class="inventory-stock-number">
+                                        {{ product.current_stock }}
+                                    </span>
+                                    <div class="stock-track" aria-hidden="true">
+                                        {% if product.reorder_level > 0 %}
+                                            {% set ratio = (product.current_stock / product.reorder_level * 100)|int %}
+                                        {% elif product.current_stock > 0 %}
+                                            {% set ratio = 100 %}
+                                        {% else %}
+                                            {% set ratio = 0 %}
+                                        {% endif %}
+                                        <span
+                                            class="{% if status == 'out' %}empty{% elif status == 'low' %}low{% endif %}"
+                                            style="width: {{ [ratio, 100]|min }}%;"
+                                        ></span>
+                                    </div>
+                                </td>
+                                <td>{{ product.reorder_level }}</td>
+                                <td>
+                                    <span class="inventory-badge {{ status }}">
+                                        {% if status == "ok" %}●{% elif status == "low" %}●{% else %}●{% endif %}
+                                        {{ status_label }}
+                                    </span>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="6">
+                                    <div class="inventory-empty">
+                                        <strong>No products in inventory yet.</strong>
+                                        <p>Add a product to start tracking stock.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="inventory-footer">
+                <span id="inventoryCount">Showing {{ products|length }} products</span>
+                <span>Stock alerts use each product's configured reorder level.</span>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const searchInput = document.getElementById("inventorySearch");
+        const statusFilter = document.getElementById("inventoryStatus");
+        const inventoryRows = Array.from(
+            document.querySelectorAll("#inventoryRows tr[data-status]")
+        );
+        const inventoryCount = document.getElementById("inventoryCount");
+
+        function filterInventory() {
+            const query = searchInput.value.trim().toLowerCase();
+            const selectedStatus = statusFilter.value;
+            let visibleCount = 0;
+
+            inventoryRows.forEach((row) => {
+                const matchesText = row.dataset.search.includes(query);
+                const matchesStatus =
+                    selectedStatus === "all" ||
+                    row.dataset.status === selectedStatus;
+
+                const visible = matchesText && matchesStatus;
+                row.hidden = !visible;
+
+                if (visible) visibleCount++;
+            });
+
+            inventoryCount.textContent =
+                `Showing ${visibleCount} of ${inventoryRows.length} products`;
+        }
+
+        searchInput.addEventListener("input", filterInventory);
+        statusFilter.addEventListener("change", filterInventory);
+    </script>
+</body>
+</html>
